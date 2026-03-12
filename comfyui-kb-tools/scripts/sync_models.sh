@@ -3,6 +3,7 @@
 # Lee SYNC_MODE: download | upload | both | dryrun
 
 MODELS_DIR="/workspace/ComfyUI/models"
+INPUT_DIR="/workspace/ComfyUI/input"
 R2_BUCKET="r2:comfy-models"
 MODE="${SYNC_MODE:-download}"
 
@@ -32,12 +33,16 @@ EXCLUDES='--exclude "LLM/**" --exclude "*.db"'
 download() {
   echo "[↓] Descargando modelos faltantes de R2 → Pod..."
   eval rclone copy "$R2_BUCKET/" "$MODELS_DIR/" $FLAGS $EXCLUDES --ignore-existing
+  echo "[↓] Descargando input faltante de R2 → Pod..."
+  eval rclone copy "$R2_BUCKET/input/" "$INPUT_DIR/" --transfers 16 --fast-list --ignore-existing --progress
   echo "✅ Download completo."
 }
 
 upload() {
   echo "[↑] Subiendo modelos nuevos Pod → R2..."
   eval rclone copy "$MODELS_DIR/" "$R2_BUCKET/" $FLAGS $EXCLUDES --ignore-existing
+  echo "[↑] Subiendo input nuevo Pod → R2..."
+  eval rclone copy "$INPUT_DIR/" "$R2_BUCKET/input/" --transfers 16 --fast-list --ignore-existing --progress
   echo "✅ Upload completo."
 }
 

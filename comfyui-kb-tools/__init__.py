@@ -58,6 +58,20 @@ async def update_nodes(request):
     thread.start()
     return web.json_response({"job_id": job_id})
 
+SAVE_ALL_SCRIPT = os.path.join(SCRIPTS_DIR, "scripts", "save_all.sh")
+
+@routes.post("/kb_tools/save_all")
+async def save_all(request):
+    import uuid
+    job_id = str(uuid.uuid4())
+    thread = threading.Thread(
+        target=run_script,
+        args=(SAVE_ALL_SCRIPT, job_id),
+        daemon=True
+    )
+    thread.start()
+    return web.json_response({"job_id": job_id})
+
 @routes.post("/kb_tools/sync_models")
 async def sync_models(request):
     import uuid

@@ -31,6 +31,15 @@ const STYLES = `
   flex-direction: column;
   gap: 8px;
 }
+.kb-section-save {
+  background: #1a2a1a;
+  border: 2px solid #27ae60;
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .kb-section label {
   color: #aaa;
   font-size: 11px;
@@ -59,6 +68,7 @@ const STYLES = `
 .kb-btn-warning { background: #e67e22; color: white; }
 .kb-btn-info    { background: #8e44ad; color: white; }
 .kb-btn-neutral { background: #555; color: white; }
+.kb-btn-save    { background: #27ae60; color: white; font-size: 13px; padding: 10px; width: 100%; }
 .kb-output {
   background: #0d0d0d;
   border: 1px solid #222;
@@ -66,7 +76,7 @@ const STYLES = `
   padding: 8px;
   font-size: 10px;
   color: #7fc97f;
-  max-height: 160px;
+  max-height: 200px;
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-all;
@@ -78,7 +88,7 @@ const STYLES = `
   color: #888;
   min-height: 16px;
 }
-.kb-status.ok  { color: #27ae60; }
+.kb-status.ok  { color: #27ae60; font-weight: bold; }
 .kb-status.err { color: #e74c3c; }
 `;
 
@@ -110,7 +120,7 @@ async function pollJob(jobId, outputEl, statusEl, buttons) {
       }
       if (data.done) {
         statusEl.className = data.returncode === 0 ? "kb-status ok" : "kb-status err";
-        statusEl.textContent = data.returncode === 0 ? "✅ Completado" : `❌ Error (código ${data.returncode})`;
+        statusEl.textContent = data.returncode === 0 ? "✅ Todo salvado — sesión segura" : `❌ Error (código ${data.returncode})`;
         buttons.forEach(b => b.disabled = false);
         break;
       }
@@ -123,7 +133,7 @@ async function pollJob(jobId, outputEl, statusEl, buttons) {
   }
 }
 
-async function startJob(url, body, outputEl, statusEl, buttons) {
+async function startJob(url, body, outputEl, statusEl, buttons, successMsg) {
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -132,7 +142,7 @@ async function startJob(url, body, outputEl, statusEl, buttons) {
     });
     const data = await res.json();
     if (data.job_id) {
-      await pollJob(data.job_id, outputEl, statusEl, buttons);
+      await pollJob(data.job_id, outputEl, statusEl, buttons, successMsg);
     } else {
       statusEl.className = "kb-status err";
       statusEl.textContent = "❌ No se pudo iniciar";
@@ -152,11 +162,37 @@ function buildPanel() {
   title.textContent = "KB Tools";
   panel.appendChild(title);
 
-  // --- Nodes section ---
+  // ============================================================
+  // SALVAR TODO
+  // ============================================================
+  const saveSection = document.createElement("div");
+  saveSection.className = "kb-section-save";
+
+  const saveLabel = document.createElement("label");
+  saveLabel.textContent = "Workflows + Input + Modelos + Nodes → R2 + GitHub";
+
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "kb-btn kb-btn-save";
+  saveBtn.textContent = "💾 SALVAR TODO";
+
+  const saveOutput = document.createElement("div");
+  saveOutput.className = "kb-output";
+  const saveStatus = document.createElement("div");
+  saveStatus.className = "kb-status";
+
+  saveBtn.addEventListener("click", () => {
+    startJob("/kb_tools/save_all", {}, saveOutput, saveStatus, [saveBtn]);
+  });
+
+  saveSection.append(saveLabel, saveBtn, saveStatus, saveOutput);
+
+  // ============================================================
+  // CUSTOM NODES
+  // ============================================================
   const nodesSection = document.createElement("div");
   nodesSection.className = "kb-section";
   const nodesLabel = document.createElement("label");
-  nodesLabel.textContent = "🧩 Sync Custom Nodes → Dockerfile → GitHub";
+  nodesLabel.textContent = "🧩 Custom Nodes → Dockerfile → GitHub";
   const nodesBtnRow = document.createElement("div");
   nodesBtnRow.className = "kb-btn-row";
   const updateBtn = document.createElement("button");
@@ -172,11 +208,13 @@ function buildPanel() {
   });
   nodesSection.append(nodesLabel, nodesBtnRow, nodesStatus, nodesOutput);
 
-  // --- Models section ---
+  // ============================================================
+  // MODELOS + INPUT
+  // ============================================================
   const modelsSection = document.createElement("div");
   modelsSection.className = "kb-section";
   const modelsLabel = document.createElement("label");
-  modelsLabel.textContent = "📦 Sync Modelos ↔ R2";
+  modelsLabel.textContent = "📦 Modelos + Input ↔ R2";
   const modelsBtnRow = document.createElement("div");
   modelsBtnRow.className = "kb-btn-row";
   const dlBtn   = document.createElement("button");
@@ -203,7 +241,7 @@ function buildPanel() {
   dryBtn.addEventListener("click",  () => startJob("/kb_tools/sync_models", { mode: "dryrun"   }, modelsOutput, modelsStatus, allBtns));
   modelsSection.append(modelsLabel, modelsBtnRow, modelsStatus, modelsOutput);
 
-  panel.append(nodesSection, modelsSection);
+  panel.append(saveSection, nodesSection, modelsSection);
   return panel;
 }
 
@@ -211,7 +249,6 @@ app.registerExtension({
   name: "KBTools.Panel",
   async setup() {
     if (app.extensionManager?.registerSidebarTab) {
-      // ComfyUI 0.16+ nueva API
       app.extensionManager.registerSidebarTab({
         id: "kb-tools",
         icon: "pi pi-wrench",
@@ -223,7 +260,6 @@ app.registerExtension({
         }
       });
     } else {
-      // Fallback versiones anteriores
       const inject = () => {
         const menu = document.querySelector(".comfy-menu");
         if (!menu) { setTimeout(inject, 1000); return; }
