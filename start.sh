@@ -4,6 +4,12 @@ echo "========================================="
 echo "  ComfyUI Blackwell - Rafael Boni"
 echo "========================================="
 
+# --- SSH ---
+mkdir -p /run/sshd
+echo "root:root" | chpasswd
+sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+service ssh start
+
 # --- Configurar rclone con R2 ---
 mkdir -p ~/.config/rclone
 cat > ~/.config/rclone/rclone.conf << EOF
@@ -33,13 +39,11 @@ jupyter lab --allow-root --no-browser --port=8888 --ip=0.0.0.0 \
 # --- Bajar modelos en background ---
 echo "[3/3] Descargando modelos desde R2 (background)..."
 (
-  # Workflows primero — excluir DBs para no corromper la de ComfyUI
   rclone copy r2:comfy-models/user/ /workspace/ComfyUI/user/ \
     --transfers 32 \
     --ignore-existing \
     --exclude "*.db"
 
-  # Modelos
   rclone copy r2:comfy-models/ /workspace/ComfyUI/models/ \
     --transfers 32 \
     --multi-thread-streams 8 \
@@ -58,7 +62,7 @@ echo "[3/3] Descargando modelos desde R2 (background)..."
   echo "Modelos descargados."
 ) &
 
-# --- ComfyUI (foreground, mantiene el container vivo) ---
+# --- ComfyUI (foreground) ---
 echo "Iniciando ComfyUI..."
 cd /workspace/ComfyUI
 python main.py --listen 0.0.0.0 --port 8188

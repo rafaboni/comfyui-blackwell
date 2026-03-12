@@ -1,4 +1,4 @@
-FROM runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
+FROM nvidia/cuda:13.1.1-cudnn-runtime-ubuntu24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
@@ -6,18 +6,24 @@ ENV PIP_NO_CACHE_DIR=1
 
 # --- System deps ---
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 python3-pip python3-dev \
     git git-lfs wget curl ffmpeg \
     libgl1 libglib2.0-0 libsm6 libxext6 libxrender-dev \
+    openssh-server \
     rclone \
+    && ln -sf /usr/bin/python3 /usr/bin/python \
+    && ln -sf /usr/bin/pip3 /usr/bin/pip \
     && rm -rf /var/lib/apt/lists/*
 
 # --- Filebrowser ---
 RUN curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
 
-# --- PyTorch nightly cu128 (reemplaza stable, habilita Blackwell sm_120) ---
-RUN pip uninstall -y torch torchvision torchaudio && \
-    pip install --pre torch torchvision torchaudio \
-        --index-url https://download.pytorch.org/whl/nightly/cu128
+# --- Jupyter ---
+RUN pip install jupyterlab
+
+# --- PyTorch nightly cu128 (Blackwell sm_120 support) ---
+RUN pip install --pre torch torchvision torchaudio \
+    --index-url https://download.pytorch.org/whl/nightly/cu128
 
 # --- ComfyUI ---
 ARG CACHE_DATE
