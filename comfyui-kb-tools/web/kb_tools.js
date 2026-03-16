@@ -43,7 +43,6 @@ const STYLES = `
 .kb-section label {
   color: #aaa;
   font-size: 11px;
-  margin-bottom: 2px;
 }
 .kb-btn-row {
   display: flex;
@@ -66,7 +65,6 @@ const STYLES = `
 .kb-btn-primary { background: #4a90d9; color: white; }
 .kb-btn-success { background: #27ae60; color: white; }
 .kb-btn-warning { background: #e67e22; color: white; }
-.kb-btn-info    { background: #8e44ad; color: white; }
 .kb-btn-neutral { background: #555; color: white; }
 .kb-btn-save    { background: #27ae60; color: white; font-size: 13px; padding: 10px; width: 100%; }
 .kb-output {
@@ -76,7 +74,7 @@ const STYLES = `
   padding: 8px;
   font-size: 10px;
   color: #7fc97f;
-  max-height: 200px;
+  max-height: 180px;
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-all;
@@ -90,6 +88,33 @@ const STYLES = `
 }
 .kb-status.ok  { color: #27ae60; font-weight: bold; }
 .kb-status.err { color: #e74c3c; }
+.kb-model-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 150px;
+  overflow-y: auto;
+  background: #0d0d0d;
+  border: 1px solid #222;
+  border-radius: 4px;
+  padding: 6px;
+}
+.kb-model-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #bbb;
+  cursor: pointer;
+}
+.kb-model-item input[type=checkbox] {
+  cursor: pointer;
+}
+.kb-model-empty {
+  color: #555;
+  font-size: 11px;
+  font-style: italic;
+}
 `;
 
 function injectStyles() {
@@ -100,7 +125,7 @@ function injectStyles() {
   document.head.appendChild(s);
 }
 
-async function pollJob(jobId, outputEl, statusEl, buttons) {
+async function pollJob(jobId, outputEl, statusEl, buttons, successMsg) {
   outputEl.textContent = "";
   outputEl.classList.add("visible");
   statusEl.className = "kb-status";
@@ -119,8 +144,11 @@ async function pollJob(jobId, outputEl, statusEl, buttons) {
         lastLine = data.lines.length;
       }
       if (data.done) {
-        statusEl.className = data.returncode === 0 ? "kb-status ok" : "kb-status err";
-        statusEl.textContent = data.returncode === 0 ? "✅ Todo salvado — sesión segura" : `❌ Error (código ${data.returncode})`;
+        const ok = data.returncode === 0;
+        statusEl.className = ok ? "kb-status ok" : "kb-status err";
+        statusEl.textContent = ok
+          ? (successMsg || "✅ Completado")
+          : `❌ Error (código ${data.returncode})`;
         buttons.forEach(b => b.disabled = false);
         break;
       }
@@ -167,81 +195,140 @@ function buildPanel() {
   // ============================================================
   const saveSection = document.createElement("div");
   saveSection.className = "kb-section-save";
-
   const saveLabel = document.createElement("label");
-  saveLabel.textContent = "Workflows + Input + Modelos + Nodes → R2 + GitHub";
-
+  saveLabel.textContent = "Workflows + Loras + Input → R2 | Nodes → GitHub";
   const saveBtn = document.createElement("button");
   saveBtn.className = "kb-btn kb-btn-save";
   saveBtn.textContent = "💾 SALVAR TODO";
-
   const saveOutput = document.createElement("div");
   saveOutput.className = "kb-output";
   const saveStatus = document.createElement("div");
   saveStatus.className = "kb-status";
-
   saveBtn.addEventListener("click", () => {
-    startJob("/kb_tools/save_all", {}, saveOutput, saveStatus, [saveBtn]);
+    startJob("/kb_tools/save_all", {}, saveOutput, saveStatus, [saveBtn], "✅ Todo salvado — sesión segura 🎉");
   });
-
   saveSection.append(saveLabel, saveBtn, saveStatus, saveOutput);
 
   // ============================================================
-  // CUSTOM NODES
+  // DESCARGAR MODELOS
   // ============================================================
-  const nodesSection = document.createElement("div");
-  nodesSection.className = "kb-section";
-  const nodesLabel = document.createElement("label");
-  nodesLabel.textContent = "🧩 Custom Nodes → Dockerfile → GitHub";
-  const nodesBtnRow = document.createElement("div");
-  nodesBtnRow.className = "kb-btn-row";
-  const updateBtn = document.createElement("button");
-  updateBtn.className = "kb-btn kb-btn-primary";
-  updateBtn.textContent = "Update Nodes";
-  nodesBtnRow.appendChild(updateBtn);
-  const nodesOutput = document.createElement("div");
-  nodesOutput.className = "kb-output";
-  const nodesStatus = document.createElement("div");
-  nodesStatus.className = "kb-status";
-  updateBtn.addEventListener("click", () => {
-    startJob("/kb_tools/update_nodes", {}, nodesOutput, nodesStatus, [updateBtn]);
+  const dlSection = document.createElement("div");
+  dlSection.className = "kb-section";
+  const dlLabel = document.createElement("label");
+  dlLabel.textContent = "📥 Descargar Modelos";
+
+  // Lista de checkboxes
+  const modelList = document.createElement("div");
+  modelList.className = "kb-model-list";
+  const loadingEl = document.createElement("div");
+  loadingEl.className = "kb-model-empty";
+  loadingEl.textContent = "Cargando lista...";
+  modelList.appendChild(loadingEl);
+
+  // Cargar lista desde R2
+  let modelData = [];
+  fetch("/kb_tools/models_list")
+    .then(r => r.json())
+    .then(data => {
+      modelList.innerHTML = "";
+      if (!data.models || data.models.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "kb-model-empty";
+        empty.textContent = data.error || "No hay modelos en la lista.";
+        modelList.appendChild(empty);
+        return;
+      }
+      modelData = data.models;
+      data.models.forEach(m => {
+        const item = document.createElement("label");
+        item.className = "kb-model-item";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.dataset.index = m.index;
+        const span = document.createElement("span");
+        span.textContent = m.name;
+        span.title = m.url;
+        item.append(cb, span);
+        modelList.appendChild(item);
+      });
+    })
+    .catch(() => {
+      modelList.innerHTML = "";
+      const empty = document.createElement("div");
+      empty.className = "kb-model-empty";
+      empty.textContent = "Error cargando lista.";
+      modelList.appendChild(empty);
+    });
+
+  const dlBtnRow = document.createElement("div");
+  dlBtnRow.className = "kb-btn-row";
+
+  const selectAllBtn = document.createElement("button");
+  selectAllBtn.className = "kb-btn kb-btn-neutral";
+  selectAllBtn.textContent = "Sel. todo";
+  selectAllBtn.addEventListener("click", () => {
+    modelList.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = true);
   });
-  nodesSection.append(nodesLabel, nodesBtnRow, nodesStatus, nodesOutput);
+
+  const downloadBtn = document.createElement("button");
+  downloadBtn.className = "kb-btn kb-btn-success";
+  downloadBtn.textContent = "⬇ Descargar";
+
+  dlBtnRow.append(selectAllBtn, downloadBtn);
+
+  const dlOutput = document.createElement("div");
+  dlOutput.className = "kb-output";
+  const dlStatus = document.createElement("div");
+  dlStatus.className = "kb-status";
+
+  downloadBtn.addEventListener("click", () => {
+    const checked = [...modelList.querySelectorAll("input[type=checkbox]:checked")];
+    if (checked.length === 0) {
+      dlStatus.className = "kb-status err";
+      dlStatus.textContent = "❌ Selecciona al menos un modelo.";
+      return;
+    }
+    const indices = checked.map(cb => parseInt(cb.dataset.index));
+    startJob("/kb_tools/download_models", { indices }, dlOutput, dlStatus, [downloadBtn, selectAllBtn], "✅ Modelos descargados.");
+  });
+
+  dlSection.append(dlLabel, modelList, dlBtnRow, dlStatus, dlOutput);
 
   // ============================================================
-  // MODELOS + INPUT
+  // INPUT
   // ============================================================
-  const modelsSection = document.createElement("div");
-  modelsSection.className = "kb-section";
-  const modelsLabel = document.createElement("label");
-  modelsLabel.textContent = "📦 Modelos + Input ↔ R2";
-  const modelsBtnRow = document.createElement("div");
-  modelsBtnRow.className = "kb-btn-row";
-  const dlBtn   = document.createElement("button");
-  dlBtn.className = "kb-btn kb-btn-success";
-  dlBtn.textContent = "⬇ Bajar";
-  const ulBtn   = document.createElement("button");
-  ulBtn.className = "kb-btn kb-btn-warning";
-  ulBtn.textContent = "⬆ Subir";
-  const bothBtn = document.createElement("button");
-  bothBtn.className = "kb-btn kb-btn-info";
-  bothBtn.textContent = "⇅ Ambos";
-  const dryBtn  = document.createElement("button");
-  dryBtn.className = "kb-btn kb-btn-neutral";
-  dryBtn.textContent = "👁 Diff";
-  modelsBtnRow.append(dlBtn, ulBtn, bothBtn, dryBtn);
-  const modelsOutput = document.createElement("div");
-  modelsOutput.className = "kb-output";
-  const modelsStatus = document.createElement("div");
-  modelsStatus.className = "kb-status";
-  const allBtns = [dlBtn, ulBtn, bothBtn, dryBtn];
-  dlBtn.addEventListener("click",   () => startJob("/kb_tools/sync_models", { mode: "download" }, modelsOutput, modelsStatus, allBtns));
-  ulBtn.addEventListener("click",   () => startJob("/kb_tools/sync_models", { mode: "upload"   }, modelsOutput, modelsStatus, allBtns));
-  bothBtn.addEventListener("click", () => startJob("/kb_tools/sync_models", { mode: "both"     }, modelsOutput, modelsStatus, allBtns));
-  dryBtn.addEventListener("click",  () => startJob("/kb_tools/sync_models", { mode: "dryrun"   }, modelsOutput, modelsStatus, allBtns));
-  modelsSection.append(modelsLabel, modelsBtnRow, modelsStatus, modelsOutput);
+  const inputSection = document.createElement("div");
+  inputSection.className = "kb-section";
+  const inputLabel = document.createElement("label");
+  inputLabel.textContent = "🖼  Imágenes de Input ↔ R2";
+  const inputBtnRow = document.createElement("div");
+  inputBtnRow.className = "kb-btn-row";
 
-  panel.append(saveSection, nodesSection, modelsSection);
+  const inputDlBtn = document.createElement("button");
+  inputDlBtn.className = "kb-btn kb-btn-primary";
+  inputDlBtn.textContent = "⬇ Bajar";
+
+  const inputUlBtn = document.createElement("button");
+  inputUlBtn.className = "kb-btn kb-btn-warning";
+  inputUlBtn.textContent = "⬆ Subir";
+
+  inputBtnRow.append(inputDlBtn, inputUlBtn);
+  const inputOutput = document.createElement("div");
+  inputOutput.className = "kb-output";
+  const inputStatus = document.createElement("div");
+  inputStatus.className = "kb-status";
+  const inputBtns = [inputDlBtn, inputUlBtn];
+
+  inputDlBtn.addEventListener("click", () =>
+    startJob("/kb_tools/sync_input", { mode: "download" }, inputOutput, inputStatus, inputBtns, "✅ Input descargado.")
+  );
+  inputUlBtn.addEventListener("click", () =>
+    startJob("/kb_tools/sync_input", { mode: "upload" }, inputOutput, inputStatus, inputBtns, "✅ Input subido.")
+  );
+
+  inputSection.append(inputLabel, inputBtnRow, inputStatus, inputOutput);
+
+  panel.append(saveSection, dlSection, inputSection);
   return panel;
 }
 
@@ -253,7 +340,7 @@ app.registerExtension({
         id: "kb-tools",
         icon: "pi pi-wrench",
         title: "KB Tools",
-        tooltip: "Sync nodes y modelos",
+        tooltip: "Salvar sesión y descargar modelos",
         type: "custom",
         render(el) {
           el.appendChild(buildPanel());

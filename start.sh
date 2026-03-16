@@ -22,7 +22,7 @@ endpoint = ${R2_ENDPOINT}
 acl = private
 EOF
 
-# --- Filebrowser ---
+# --- FileBrowser ---
 echo "[1/3] Iniciando FileBrowser..."
 mkdir -p /workspace/ComfyUI/output
 filebrowser -r /workspace -p 8080 --address 0.0.0.0 --noauth &
@@ -36,30 +36,19 @@ jupyter lab --allow-root --no-browser --port=8888 --ip=0.0.0.0 \
   --ServerApp.allow_remote_access=True \
   --ServerApp.disable_check_xsrf=True &
 
-# --- Bajar modelos en background ---
-echo "[3/3] Descargando modelos desde R2 (background)..."
+# --- Descarga inicial en background (liviana) ---
+echo "[3/3] Descargando workflows y loras desde R2 (background)..."
 (
+  echo "→ Workflows..."
   rclone copy r2:comfy-models/user/ /workspace/ComfyUI/user/ \
-    --transfers 32 \
-    --ignore-existing \
-    --exclude "*.db"
+    --transfers 16 --fast-list --ignore-existing \
+    --exclude "*.db" --progress
 
-  rclone copy r2:comfy-models/ /workspace/ComfyUI/models/ \
-    --transfers 32 \
-    --multi-thread-streams 8 \
-    --buffer-size 256M \
-    --checkers 64 \
-    --fast-list \
-    --ignore-existing \
-    --exclude "user/**" \
-    --exclude "LLM/**" \
-    --exclude "text_encoders/gemma*" \
-    --exclude "checkpoints/ltx*" \
-    --exclude "loras/ltx*" \
-    --exclude "*.db" \
-    --progress
+  echo "→ Loras..."
+  rclone copy r2:comfy-models/loras/ /workspace/ComfyUI/models/loras/ \
+    --transfers 16 --fast-list --ignore-existing --progress
 
-  echo "Modelos descargados."
+  echo "✅ Listo para trabajar."
 ) &
 
 # --- ComfyUI (foreground) ---

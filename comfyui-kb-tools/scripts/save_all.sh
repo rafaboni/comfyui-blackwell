@@ -1,5 +1,5 @@
 #!/bin/bash
-# save_all.sh — salva toda la sesión: workflows, input, modelos, nodes
+# save_all.sh — sube workflows + loras + input + actualiza nodes en GitHub
 set -e
 
 COMFY_DIR="/workspace/ComfyUI"
@@ -11,17 +11,11 @@ echo "========================================="
 echo "  KB Tools - SALVAR TODO"
 echo "========================================="
 
-# --- Validar credenciales ---
 if [ -z "$R2_ACCESS_KEY" ] || [ -z "$R2_SECRET_KEY" ] || [ -z "$R2_ENDPOINT" ]; then
   echo "ERROR: Faltan credenciales R2."
   exit 1
 fi
 
-if [ -z "$GITHUB_TOKEN" ]; then
-  echo "WARN: GITHUB_TOKEN no encontrado — se saltará el update de nodes en GitHub."
-fi
-
-# --- Configurar rclone ---
 mkdir -p ~/.config/rclone
 cat > ~/.config/rclone/rclone.conf << EOF
 [r2]
@@ -33,33 +27,29 @@ endpoint = ${R2_ENDPOINT}
 acl = private
 EOF
 
-RCLONE_FLAGS="--transfers 16 --multi-thread-streams 4 --buffer-size 64M --checkers 32 --fast-list --ignore-existing --progress"
-
-# -------------------------------------------------------
+# --- 1. Workflows ---
 echo ""
-echo "[1/4] 📋 Subiendo workflows (user/)..."
+echo "[1/4] 📋 Subiendo workflows..."
 rclone copy "$COMFY_DIR/user/" "$R2_BUCKET/user/" \
   --transfers 16 --fast-list --ignore-existing --progress \
   --exclude "*.db"
 echo "✅ Workflows salvados."
 
-# -------------------------------------------------------
+# --- 2. Loras ---
 echo ""
-echo "[2/4] 🖼  Subiendo imágenes de input (input/)..."
+echo "[2/4] 🎨 Subiendo loras..."
+rclone copy "$COMFY_DIR/models/loras/" "$R2_BUCKET/loras/" \
+  --transfers 16 --fast-list --ignore-existing --progress
+echo "✅ Loras salvadas."
+
+# --- 3. Input ---
+echo ""
+echo "[3/4] 🖼  Subiendo imágenes de input..."
 rclone copy "$COMFY_DIR/input/" "$R2_BUCKET/input/" \
   --transfers 16 --fast-list --ignore-existing --progress
 echo "✅ Input salvado."
 
-# -------------------------------------------------------
-echo ""
-echo "[3/4] 📦 Subiendo modelos nuevos (models/)..."
-rclone copy "$COMFY_DIR/models/" "$R2_BUCKET/" \
-  $RCLONE_FLAGS \
-  --exclude "LLM/**" \
-  --exclude "*.db"
-echo "✅ Modelos salvados."
-
-# -------------------------------------------------------
+# --- 4. Custom nodes → GitHub ---
 echo ""
 echo "[4/4] 🧩 Actualizando custom nodes en GitHub..."
 
