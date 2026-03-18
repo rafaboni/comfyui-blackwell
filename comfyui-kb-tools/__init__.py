@@ -59,7 +59,7 @@ async def update_nodes(request):
     job_id = str(uuid.uuid4())
     threading.Thread(
         target=run_script,
-        args=(os.path.join(SCRIPTS_DIR, "save_all.sh"), job_id),
+        args=(os.path.join(SCRIPTS_DIR, "update_nodes.sh"), job_id),
         daemon=True
     ).start()
     return web.json_response({"job_id": job_id})

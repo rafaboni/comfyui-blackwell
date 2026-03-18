@@ -77,7 +77,7 @@ download_file() {
       local pct=$(( current * 100 / total_bytes ))
       local elapsed=$(( $(date +%s) - start_time ))
       local speed_mb=0
-      [ "$elapsed" -gt 0 ] && speed_mb=$(echo "scale=1; $current / 1048576 / $elapsed" | bc)
+      [ "$elapsed" -gt 0 ] && speed_mb=$(python3 -c "print(round($current / 1048576 / $elapsed, 1))")
       echo "PROGRESS:$(basename $dest_abs):${pct}:${speed_mb}"
     fi
   done
@@ -90,9 +90,9 @@ download_file() {
     rm -f "$dest_abs"
   else
     local elapsed=$(( $(date +%s) - start_time ))
-    local size_mb=$(echo "scale=1; $(stat -c%s "$dest_abs") / 1048576" | bc)
+    local size_mb=$(python3 -c "print(round($(stat -c%s "$dest_abs") / 1048576, 1))")
     local avg_speed=0
-    [ "$elapsed" -gt 0 ] && avg_speed=$(echo "scale=1; $size_mb / $elapsed" | bc)
+    [ "$elapsed" -gt 0 ] && avg_speed=$(python3 -c "print(round($size_mb / $elapsed, 1))")
     echo "  ✅ $(basename $dest_abs) — ${size_mb}MB en ${elapsed}s @ ${avg_speed} MB/s"
   fi
 }

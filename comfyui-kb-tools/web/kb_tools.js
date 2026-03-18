@@ -482,6 +482,26 @@ function buildPanel() {
   inputSection.append(inputLabel, inputBtnRow, inputStatus, inputOutput);
 
   // ============================================================
+  // UPDATE NODES
+  // ============================================================
+  const nodesSection = document.createElement("div");
+  nodesSection.className = "kb-section";
+  const nodesLabel = document.createElement("label");
+  nodesLabel.textContent = "🧩 Update Nodes → Dockerfile → GitHub";
+  const nodesBtn = document.createElement("button");
+  nodesBtn.className = "kb-btn kb-btn-primary";
+  nodesBtn.textContent = "🧩 Update Nodes";
+  nodesBtn.style.width = "100%";
+  const nodesOutput = document.createElement("div");
+  nodesOutput.className = "kb-output";
+  const nodesStatus = document.createElement("div");
+  nodesStatus.className = "kb-status";
+  nodesBtn.addEventListener("click", () => {
+    startJob("/kb_tools/update_nodes", {}, nodesOutput, nodesStatus, [nodesBtn], "✅ Nodes actualizados → build disparado.");
+  });
+  nodesSection.append(nodesLabel, nodesBtn, nodesStatus, nodesOutput);
+
+  // ============================================================
   // EDITOR DE PACKS
   // ============================================================
   const editorSection = document.createElement("div");
@@ -589,7 +609,7 @@ function buildPanel() {
 
   editorSection.append(editorLabel, packNameInput, modelInput, clipInput, vaeInput, addPackBtn, editorStatus);
 
-  panel.append(saveSection, dlSection, inputSection, editorSection);
+  panel.append(saveSection, dlSection, inputSection, nodesSection, editorSection);
   return panel;
 }
 
