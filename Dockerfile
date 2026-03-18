@@ -61,10 +61,6 @@ RUN for dir in /workspace/ComfyUI/custom_nodes/*/; do \
         pip install -r "$dir/requirements.txt" || true; \
     done
 
-# --- KB Tools custom node (desde el repo) ---
-COPY comfyui-kb-tools/ /workspace/ComfyUI/custom_nodes/comfyui-kb-tools/
-RUN chmod +x /workspace/ComfyUI/custom_nodes/comfyui-kb-tools/scripts/*.sh
-
 # --- Script de inicio ---
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
