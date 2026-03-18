@@ -594,7 +594,7 @@ function buildPanel() {
 }
 
 app.registerExtension({
-  name: "KBTools.Panel",
+  name: "KBTools.Panel.20260318192633",
   async setup() {
     if (app.extensionManager?.registerSidebarTab) {
       app.extensionManager.registerSidebarTab({
