@@ -88,6 +88,18 @@ const STYLES = `
 }
 .kb-status.ok  { color: #27ae60; font-weight: bold; }
 .kb-status.err { color: #e74c3c; }
+.kb-editor-field {
+  width: 100%;
+  padding: 5px 6px;
+  background: #0d0d0d;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #ccc;
+  font-size: 11px;
+  font-family: monospace;
+  box-sizing: border-box;
+  margin-bottom: 4px;
+}
 .kb-model-list {
   display: flex;
   flex-direction: column;
@@ -327,7 +339,115 @@ function buildPanel() {
 
   inputSection.append(inputLabel, inputBtnRow, inputStatus, inputOutput);
 
-  panel.append(saveSection, dlSection, inputSection);
+  // ============================================================
+  // EDITOR DE PACKS
+  // ============================================================
+  const editorSection = document.createElement("div");
+  editorSection.className = "kb-section";
+  const editorLabel = document.createElement("label");
+  editorLabel.textContent = "✏️ Agregar Pack de Modelos";
+
+  // Form fields
+  function makeField(placeholder) {
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.placeholder = placeholder;
+    inp.style.cssText = "width:100%;padding:5px 6px;background:#0d0d0d;border:1px solid #333;border-radius:4px;color:#ccc;font-size:11px;font-family:monospace;box-sizing:border-box;margin-bottom:4px;";
+    return inp;
+  }
+
+  const packNameInput = makeField("Nombre del pack (ej: Klein 9B fp8)");
+  const modelInput    = makeField("URL modelo (diffusion_model)");
+  const clipInput     = makeField("URL text encoder (clip/t5/qwen)");
+  const vaeInput      = makeField("URL VAE");
+
+  const addPackBtn = document.createElement("button");
+  addPackBtn.className = "kb-btn kb-btn-primary";
+  addPackBtn.textContent = "+ Agregar pack";
+  addPackBtn.style.width = "100%";
+  addPackBtn.style.marginTop = "4px";
+
+  const editorStatus = document.createElement("div");
+  editorStatus.className = "kb-status";
+
+  // Inferir destino desde URL
+  function inferDest(url, type) {
+    const fname = url.split("/").pop().split("?")[0];
+    if (type === "model") return `models/diffusion_models/${fname}`;
+    if (type === "clip")  return `models/text_encoders/${fname}`;
+    if (type === "vae")   return `models/vae/${fname}`;
+    return `models/${fname}`;
+  }
+
+  addPackBtn.addEventListener("click", async () => {
+    const name  = packNameInput.value.trim();
+    const model = modelInput.value.trim();
+    const clip  = clipInput.value.trim();
+    const vae   = vaeInput.value.trim();
+
+    if (!name || !model || !clip || !vae) {
+      editorStatus.className = "kb-status err";
+      editorStatus.textContent = "❌ Completa todos los campos.";
+      return;
+    }
+
+    editorStatus.className = "kb-status";
+    editorStatus.textContent = "⏳ Cargando lista actual...";
+
+    try {
+      // Leer txt actual
+      const res = await fetch("/kb_tools/models_txt");
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      // Armar nuevo pack
+      const newPack = `\nPACK: ${name}\n${model} ${inferDest(model, "model")}\n${clip} ${inferDest(clip, "clip")}\n${vae} ${inferDest(vae, "vae")}\n`;
+      const newContent = (data.content || "").trimEnd() + newPack;
+
+      // Guardar en R2
+      const saveRes = await fetch("/kb_tools/save_models_txt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: newContent })
+      });
+      const saveData = await saveRes.json();
+      if (!saveData.ok) throw new Error(saveData.error || "Error guardando");
+
+      editorStatus.className = "kb-status ok";
+      editorStatus.textContent = `✅ Pack "${name}" agregado. Recarga KB Tools para verlo.`;
+
+      // Limpiar campos
+      packNameInput.value = "";
+      modelInput.value = "";
+      clipInput.value = "";
+      vaeInput.value = "";
+
+      // Recargar lista de packs
+      modelList.innerHTML = "<div class='kb-model-empty'>Recargando...</div>";
+      fetch("/kb_tools/models_list").then(r => r.json()).then(d => {
+        modelList.innerHTML = "";
+        (d.packs || []).forEach(pack => {
+          const item = document.createElement("label");
+          item.className = "kb-model-item";
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.dataset.packName = pack.name;
+          const span = document.createElement("span");
+          span.textContent = `${pack.name} (${pack.files.length} archivos)`;
+          item.append(cb, span);
+          modelList.appendChild(item);
+        });
+      });
+
+    } catch(e) {
+      editorStatus.className = "kb-status err";
+      editorStatus.textContent = `❌ ${e.message}`;
+    }
+  });
+
+  editorSection.append(editorLabel, packNameInput, modelInput, clipInput, vaeInput, addPackBtn, editorStatus);
+
+  panel.append(saveSection, dlSection, inputSection, editorSection);
   return panel;
 }
 

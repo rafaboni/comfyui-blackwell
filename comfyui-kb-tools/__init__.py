@@ -132,6 +132,52 @@ async def sync_input(request):
     ).start()
     return web.json_response({"job_id": job_id})
 
+@routes.get("/kb_tools/models_txt")
+async def get_models_txt(request):
+    """Lee models_to_download.txt de R2 y lo devuelve como texto."""
+    import subprocess, tempfile, os
+    tmp = tempfile.mkdtemp()
+    try:
+        subprocess.run(
+            ["rclone", "copy", "r2:comfy-models/config/models_to_download.txt", tmp],
+            capture_output=True, text=True, timeout=30
+        )
+        txt_path = os.path.join(tmp, "models_to_download.txt")
+        if not os.path.exists(txt_path):
+            return web.json_response({"content": "", "error": "models_to_download.txt no encontrado en R2"})
+        with open(txt_path) as f:
+            content = f.read()
+        return web.json_response({"content": content})
+    except Exception as e:
+        return web.json_response({"content": "", "error": str(e)})
+    finally:
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)
+
+@routes.post("/kb_tools/save_models_txt")
+async def save_models_txt(request):
+    """Guarda models_to_download.txt en R2."""
+    import subprocess, tempfile, os
+    data = await request.json()
+    content = data.get("content", "")
+    tmp = tempfile.mkdtemp()
+    try:
+        txt_path = os.path.join(tmp, "models_to_download.txt")
+        with open(txt_path, "w") as f:
+            f.write(content)
+        result = subprocess.run(
+            ["rclone", "copy", txt_path, "r2:comfy-models/config/"],
+            capture_output=True, text=True, timeout=30
+        )
+        if result.returncode != 0:
+            return web.json_response({"ok": False, "error": result.stderr})
+        return web.json_response({"ok": True})
+    except Exception as e:
+        return web.json_response({"ok": False, "error": str(e)})
+    finally:
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)
+
 @routes.get("/kb_tools/output/{job_id}")
 async def get_output(request):
     job_id = request.match_info["job_id"]

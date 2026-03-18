@@ -52,14 +52,51 @@ download_file() {
   mkdir -p "$(dirname "$dest_abs")"
   echo "  ↓ Descargando: $(basename $dest_abs)"
 
+  local auth_header=""
+  local final_url="$url"
   if echo "$url" | grep -q "huggingface.co" && [ -n "$HF_TOKEN" ]; then
-    curl -L --progress-bar -o "$dest_abs" \
-      -H "Authorization: Bearer $HF_TOKEN" "$url" 2>&1 || { echo "  ❌ Error"; rm -f "$dest_abs"; }
+    auth_header="-H \"Authorization: Bearer $HF_TOKEN\""
   elif echo "$url" | grep -q "civitai.com" && [ -n "$CIVITAI_TOKEN" ]; then
-    curl -L --progress-bar -o "$dest_abs" \
-      "${url}?token=${CIVITAI_TOKEN}" 2>&1 || { echo "  ❌ Error"; rm -f "$dest_abs"; }
+    final_url="${url}?token=${CIVITAI_TOKEN}"
+  fi
+
+  # Obtener tamaño total primero
+  local total_bytes=$(eval curl -sI $auth_header "$final_url" | grep -i content-length | awk '{print $2}' | tr -d '\r')
+  [ -z "$total_bytes" ] && total_bytes=0
+
+  # Descargar en background y monitorear tamaño
+  eval curl -L --no-progress-meter $auth_header -o "$dest_abs" "$final_url" &
+  local curl_pid=$!
+  local last_pct=0
+  local start_time=$(date +%s)
+
+  while kill -0 $curl_pid 2>/dev/null; do
+    sleep 2
+    if [ -f "$dest_abs" ] && [ "$total_bytes" -gt 0 ]; then
+      local current=$(stat -c%s "$dest_abs" 2>/dev/null || echo 0)
+      local pct=$(( current * 100 / total_bytes ))
+      local elapsed=$(( $(date +%s) - start_time ))
+      local speed_mb=0
+      [ "$elapsed" -gt 0 ] && speed_mb=$(echo "scale=1; $current / 1048576 / $elapsed" | bc)
+      if [ "$pct" -ge $(( last_pct + 10 )) ]; then
+        echo "  ${pct}% — ${speed_mb} MB/s"
+        last_pct=$pct
+      fi
+    fi
+  done
+
+  wait $curl_pid
+  local exit_code=$?
+
+  if [ $exit_code -ne 0 ] || [ ! -s "$dest_abs" ]; then
+    echo "  ❌ Error descargando $(basename $dest_abs)"
+    rm -f "$dest_abs"
   else
-    curl -L --progress-bar -o "$dest_abs" "$url" 2>&1 || { echo "  ❌ Error"; rm -f "$dest_abs"; }
+    local elapsed=$(( $(date +%s) - start_time ))
+    local size_mb=$(echo "scale=1; $(stat -c%s "$dest_abs") / 1048576" | bc)
+    local avg_speed=0
+    [ "$elapsed" -gt 0 ] && avg_speed=$(echo "scale=1; $size_mb / $elapsed" | bc)
+    echo "  ✅ $(basename $dest_abs) — ${size_mb}MB en ${elapsed}s @ ${avg_speed} MB/s"
   fi
 }
 

@@ -27,6 +27,14 @@ endpoint = ${R2_ENDPOINT}
 acl = private
 EOF
 
+# --- Leer tokens de R2 si no están en env ---
+TMP_TOKENS="/tmp/kb_tokens.txt"
+rclone copy "r2:comfy-models/config/tokens.txt" /tmp/ --fast-list 2>/dev/null && mv /tmp/tokens.txt "$TMP_TOKENS" 2>/dev/null || true
+
+if [ -f "$TMP_TOKENS" ]; then
+  [ -z "$GITHUB_TOKEN" ] && GITHUB_TOKEN=$(grep "GITHUB_TOKEN" "$TMP_TOKENS" | cut -d'=' -f2 | tr -d ' \r')
+fi
+
 # --- 1. Workflows ---
 echo ""
 echo "[1/4] 📋 Subiendo workflows..."
