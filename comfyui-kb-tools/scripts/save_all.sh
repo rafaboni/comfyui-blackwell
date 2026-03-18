@@ -31,7 +31,7 @@ EOF
 echo ""
 echo "[1/4] 📋 Subiendo workflows..."
 rclone copy "$COMFY_DIR/user/" "$R2_BUCKET/user/" \
-  --transfers 16 --fast-list --ignore-existing --progress \
+  --transfers 16 --fast-list --ignore-existing \
   --exclude "*.db"
 echo "✅ Workflows salvados."
 
@@ -39,14 +39,14 @@ echo "✅ Workflows salvados."
 echo ""
 echo "[2/4] 🎨 Subiendo loras..."
 rclone copy "$COMFY_DIR/models/loras/" "$R2_BUCKET/loras/" \
-  --transfers 16 --fast-list --ignore-existing --progress
+  --transfers 16 --fast-list --ignore-existing
 echo "✅ Loras salvadas."
 
 # --- 3. Input ---
 echo ""
 echo "[3/4] 🖼  Subiendo imágenes de input..."
 rclone copy "$COMFY_DIR/input/" "$R2_BUCKET/input/" \
-  --transfers 16 --fast-list --ignore-existing --progress
+  --transfers 16 --fast-list --ignore-existing
 echo "✅ Input salvado."
 
 # --- 4. Custom nodes → GitHub ---

@@ -66,33 +66,40 @@ async def update_nodes(request):
 
 @routes.get("/kb_tools/models_list")
 async def models_list(request):
-    """Lee models_to_download.txt de R2 y devuelve la lista parseada."""
+    """Lee models_to_download.txt de R2 y devuelve packs parseados."""
     import subprocess, tempfile, os
     tmp = tempfile.mkdtemp()
     try:
-        result = subprocess.run(
+        subprocess.run(
             ["rclone", "copy", "r2:comfy-models/config/models_to_download.txt", tmp],
             capture_output=True, text=True, timeout=30
         )
         txt_path = os.path.join(tmp, "models_to_download.txt")
         if not os.path.exists(txt_path):
-            return web.json_response({"models": [], "error": "models_to_download.txt no encontrado en R2"})
+            return web.json_response({"packs": [], "error": "models_to_download.txt no encontrado en R2"})
 
-        models = []
+        packs = []
+        current_pack = None
         with open(txt_path) as f:
-            for i, line in enumerate(f):
+            for line in f:
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
-                parts = line.split()
-                if len(parts) >= 2:
-                    url, dest = parts[0], parts[1]
-                    name = os.path.basename(dest)
-                    models.append({"index": i, "name": name, "url": url, "dest": dest})
+                if line.startswith("PACK:"):
+                    current_pack = {"name": line[5:].strip(), "files": []}
+                    packs.append(current_pack)
+                elif current_pack is not None:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        current_pack["files"].append({
+                            "url": parts[0],
+                            "dest": parts[1],
+                            "name": os.path.basename(parts[1])
+                        })
 
-        return web.json_response({"models": models})
+        return web.json_response({"packs": packs})
     except Exception as e:
-        return web.json_response({"models": [], "error": str(e)})
+        return web.json_response({"packs": [], "error": str(e)})
     finally:
         import shutil
         shutil.rmtree(tmp, ignore_errors=True)
@@ -101,13 +108,13 @@ async def models_list(request):
 async def download_models(request):
     import uuid
     data = await request.json()
-    indices = data.get("indices", "ALL")
-    if isinstance(indices, list):
-        indices = ",".join(str(i) for i in indices)
+    packs = data.get("packs", "ALL")
+    if isinstance(packs, list):
+        packs = "|".join(packs)
     job_id = str(uuid.uuid4())
     threading.Thread(
         target=run_script,
-        args=(os.path.join(SCRIPTS_DIR, "download_models.sh"), job_id, {"SELECTED_MODELS": str(indices)}),
+        args=(os.path.join(SCRIPTS_DIR, "download_models.sh"), job_id, {"SELECTED_PACKS": str(packs)}),
         daemon=True
     ).start()
     return web.json_response({"job_id": job_id})

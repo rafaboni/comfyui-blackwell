@@ -226,28 +226,27 @@ function buildPanel() {
   modelList.appendChild(loadingEl);
 
   // Cargar lista desde R2
-  let modelData = [];
+  let packData = [];
   fetch("/kb_tools/models_list")
     .then(r => r.json())
     .then(data => {
       modelList.innerHTML = "";
-      if (!data.models || data.models.length === 0) {
+      if (!data.packs || data.packs.length === 0) {
         const empty = document.createElement("div");
         empty.className = "kb-model-empty";
-        empty.textContent = data.error || "No hay modelos en la lista.";
+        empty.textContent = data.error || "No hay packs en la lista.";
         modelList.appendChild(empty);
         return;
       }
-      modelData = data.models;
-      data.models.forEach(m => {
+      packData = data.packs;
+      data.packs.forEach(pack => {
         const item = document.createElement("label");
         item.className = "kb-model-item";
         const cb = document.createElement("input");
         cb.type = "checkbox";
-        cb.dataset.index = m.index;
+        cb.dataset.packName = pack.name;
         const span = document.createElement("span");
-        span.textContent = m.name;
-        span.title = m.url;
+        span.textContent = `${pack.name} (${pack.files.length} archivos)`;
         item.append(cb, span);
         modelList.appendChild(item);
       });
@@ -285,11 +284,11 @@ function buildPanel() {
     const checked = [...modelList.querySelectorAll("input[type=checkbox]:checked")];
     if (checked.length === 0) {
       dlStatus.className = "kb-status err";
-      dlStatus.textContent = "❌ Selecciona al menos un modelo.";
+      dlStatus.textContent = "❌ Selecciona al menos un pack.";
       return;
     }
-    const indices = checked.map(cb => parseInt(cb.dataset.index));
-    startJob("/kb_tools/download_models", { indices }, dlOutput, dlStatus, [downloadBtn, selectAllBtn], "✅ Modelos descargados.");
+    const packs = checked.map(cb => cb.dataset.packName);
+    startJob("/kb_tools/download_models", { packs }, dlOutput, dlStatus, [downloadBtn, selectAllBtn], "✅ Modelos descargados.");
   });
 
   dlSection.append(dlLabel, modelList, dlBtnRow, dlStatus, dlOutput);

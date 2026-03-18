@@ -21,7 +21,7 @@ endpoint = ${R2_ENDPOINT}
 acl = private
 EOF
 
-FLAGS="--transfers 16 --fast-list --ignore-existing --progress"
+FLAGS="--transfers 16 --fast-list --ignore-existing"
 
 case $MODE in
   upload)
