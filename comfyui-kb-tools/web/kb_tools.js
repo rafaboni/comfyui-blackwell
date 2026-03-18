@@ -88,18 +88,36 @@ const STYLES = `
 }
 .kb-status.ok  { color: #27ae60; font-weight: bold; }
 .kb-status.err { color: #e74c3c; }
-.kb-editor-field {
-  width: 100%;
-  padding: 5px 6px;
-  background: #0d0d0d;
-  border: 1px solid #333;
-  border-radius: 4px;
-  color: #ccc;
-  font-size: 11px;
-  font-family: monospace;
-  box-sizing: border-box;
-  margin-bottom: 4px;
+.kb-progress-container {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
 }
+.kb-progress-container.visible { display: flex; }
+.kb-progress-item { display: flex; flex-direction: column; gap: 3px; }
+.kb-progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #aaa;
+}
+.kb-progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: #222;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.kb-progress-bar-fill {
+  height: 100%;
+  background: #27ae60;
+  border-radius: 4px;
+  transition: width 0.8s ease;
+  width: 0%;
+}
+.kb-progress-bar-fill.done { background: #4a90d9; }
+.kb-progress-bar-fill.error { background: #e74c3c; }
 .kb-model-list {
   display: flex;
   flex-direction: column;
@@ -158,9 +176,113 @@ async function pollJob(jobId, outputEl, statusEl, buttons, successMsg) {
       if (data.done) {
         const ok = data.returncode === 0;
         statusEl.className = ok ? "kb-status ok" : "kb-status err";
-        statusEl.textContent = ok
-          ? (successMsg || "✅ Completado")
-          : `❌ Error (código ${data.returncode})`;
+        statusEl.textContent = ok ? (successMsg || "✅ Completado") : `❌ Error (código ${data.returncode})`;
+        buttons.forEach(b => b.disabled = false);
+        break;
+      }
+    } catch(e) {
+      statusEl.className = "kb-status err";
+      statusEl.textContent = "❌ Error de comunicación";
+      buttons.forEach(b => b.disabled = false);
+      break;
+    }
+  }
+}
+
+// Poll especializado para descargas con barras de progreso
+async function pollDownloadJob(jobId, progressContainer, statusEl, buttons, successMsg) {
+  progressContainer.innerHTML = "";
+  progressContainer.classList.add("visible");
+  statusEl.className = "kb-status";
+  statusEl.textContent = "⏳ Descargando...";
+  buttons.forEach(b => b.disabled = true);
+
+  const bars = {}; // filename -> { item, fill, header }
+  let lastLine = 0;
+
+  function getOrCreateBar(filename) {
+    if (bars[filename]) return bars[filename];
+    const item = document.createElement("div");
+    item.className = "kb-progress-item";
+
+    const header = document.createElement("div");
+    header.className = "kb-progress-header";
+    const nameEl = document.createElement("span");
+    nameEl.textContent = filename;
+    const infoEl = document.createElement("span");
+    infoEl.textContent = "0% — 0 MB/s";
+    header.append(nameEl, infoEl);
+
+    const bg = document.createElement("div");
+    bg.className = "kb-progress-bar-bg";
+    const fill = document.createElement("div");
+    fill.className = "kb-progress-bar-fill";
+    bg.appendChild(fill);
+
+    item.append(header, bg);
+    progressContainer.appendChild(item);
+    bars[filename] = { fill, infoEl };
+    return bars[filename];
+  }
+
+  while (true) {
+    await new Promise(r => setTimeout(r, 600));
+    try {
+      const res = await fetch(`/kb_tools/output/${jobId}`);
+      const data = await res.json();
+      const newLines = data.lines.slice(lastLine);
+      lastLine = data.lines.length;
+
+      for (const line of newLines) {
+        if (line.startsWith("PROGRESS:")) {
+          // PROGRESS:filename:pct:speed
+          const parts = line.split(":");
+          const fname = parts[1];
+          const pct   = parseInt(parts[2]) || 0;
+          const speed = parts[3] || "0";
+          const bar = getOrCreateBar(fname);
+          bar.fill.style.width = pct + "%";
+          bar.infoEl.textContent = `${pct}% — ${speed} MB/s`;
+        } else if (line.includes("✅")) {
+          // Archivo completado
+          const fname = line.match(/✅ (.+?) —/)?.[1];
+          if (fname && bars[fname]) {
+            bars[fname].fill.style.width = "100%";
+            bars[fname].fill.classList.add("done");
+            bars[fname].infoEl.textContent = line.replace("  ✅ ", "");
+          } else {
+            // Mensaje general — mostrar como texto pequeño
+            const txt = document.createElement("div");
+            txt.style.cssText = "font-size:10px;color:#7fc97f;margin-top:2px;";
+            txt.textContent = line;
+            progressContainer.appendChild(txt);
+          }
+        } else if (line.includes("❌")) {
+          const txt = document.createElement("div");
+          txt.style.cssText = "font-size:10px;color:#e74c3c;margin-top:2px;";
+          txt.textContent = line;
+          progressContainer.appendChild(txt);
+        } else if (line.trim() && !line.startsWith("  ✓")) {
+          // Info general (pack name, etc)
+          const txt = document.createElement("div");
+          txt.style.cssText = "font-size:10px;color:#aaa;margin-top:4px;";
+          txt.textContent = line;
+          progressContainer.appendChild(txt);
+        }
+        progressContainer.scrollTop = progressContainer.scrollHeight;
+      }
+
+      if (data.done) {
+        // Marcar todas las barras incompletas como done
+        Object.values(bars).forEach(b => {
+          if (parseFloat(b.fill.style.width) < 100) {
+            b.fill.style.width = "100%";
+            b.fill.classList.add("done");
+          }
+        });
+        const ok = data.returncode === 0;
+        statusEl.className = ok ? "kb-status ok" : "kb-status err";
+        statusEl.textContent = ok ? (successMsg || "✅ Completado") : `❌ Error (código ${data.returncode})`;
         buttons.forEach(b => b.disabled = false);
         break;
       }
@@ -287,8 +409,10 @@ function buildPanel() {
 
   dlBtnRow.append(selectAllBtn, downloadBtn);
 
-  const dlOutput = document.createElement("div");
-  dlOutput.className = "kb-output";
+  const dlProgressContainer = document.createElement("div");
+  dlProgressContainer.className = "kb-progress-container";
+  dlProgressContainer.style.maxHeight = "250px";
+  dlProgressContainer.style.overflowY = "auto";
   const dlStatus = document.createElement("div");
   dlStatus.className = "kb-status";
 
@@ -300,10 +424,28 @@ function buildPanel() {
       return;
     }
     const packs = checked.map(cb => cb.dataset.packName);
-    startJob("/kb_tools/download_models", { packs }, dlOutput, dlStatus, [downloadBtn, selectAllBtn], "✅ Modelos descargados.");
+    // Iniciar job
+    fetch("/kb_tools/download_models", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ packs })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.job_id) {
+        pollDownloadJob(data.job_id, dlProgressContainer, dlStatus, [downloadBtn, selectAllBtn], "✅ Modelos descargados.");
+      } else {
+        dlStatus.className = "kb-status err";
+        dlStatus.textContent = "❌ No se pudo iniciar";
+      }
+    })
+    .catch(e => {
+      dlStatus.className = "kb-status err";
+      dlStatus.textContent = `❌ ${e.message}`;
+    });
   });
 
-  dlSection.append(dlLabel, modelList, dlBtnRow, dlStatus, dlOutput);
+  dlSection.append(dlLabel, modelList, dlBtnRow, dlStatus, dlProgressContainer);
 
   // ============================================================
   // INPUT

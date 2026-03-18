@@ -61,27 +61,24 @@ download_file() {
   fi
 
   # Obtener tamaño total primero
-  local total_bytes=$(eval curl -sI $auth_header "$final_url" | grep -i content-length | awk '{print $2}' | tr -d '\r')
+  local total_bytes=$(eval curl -sI $auth_header "$final_url" 2>/dev/null | grep -i content-length | awk '{print $2}' | tr -d '\r')
   [ -z "$total_bytes" ] && total_bytes=0
 
-  # Descargar en background y monitorear tamaño
-  eval curl -L --no-progress-meter $auth_header -o "$dest_abs" "$final_url" &
+  # Descargar en background silencioso y monitorear tamaño
+  eval curl -L --no-progress-meter $auth_header -o "$dest_abs" "$final_url" 2>/dev/null &
   local curl_pid=$!
   local last_pct=0
   local start_time=$(date +%s)
 
   while kill -0 $curl_pid 2>/dev/null; do
-    sleep 2
+    sleep 1
     if [ -f "$dest_abs" ] && [ "$total_bytes" -gt 0 ]; then
       local current=$(stat -c%s "$dest_abs" 2>/dev/null || echo 0)
       local pct=$(( current * 100 / total_bytes ))
       local elapsed=$(( $(date +%s) - start_time ))
       local speed_mb=0
       [ "$elapsed" -gt 0 ] && speed_mb=$(echo "scale=1; $current / 1048576 / $elapsed" | bc)
-      if [ "$pct" -ge $(( last_pct + 10 )) ]; then
-        echo "  ${pct}% — ${speed_mb} MB/s"
-        last_pct=$pct
-      fi
+      echo "PROGRESS:$(basename $dest_abs):${pct}:${speed_mb}"
     fi
   done
 

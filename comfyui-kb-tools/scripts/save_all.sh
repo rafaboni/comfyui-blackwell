@@ -27,19 +27,19 @@ endpoint = ${R2_ENDPOINT}
 acl = private
 EOF
 
-# --- Leer tokens de R2 si no están en env ---
-TMP_TOKENS="/tmp/kb_tokens.txt"
-rclone copy "r2:comfy-models/config/tokens.txt" /tmp/ --fast-list 2>/dev/null && mv /tmp/tokens.txt "$TMP_TOKENS" 2>/dev/null || true
-
-if [ -f "$TMP_TOKENS" ]; then
-  [ -z "$GITHUB_TOKEN" ] && GITHUB_TOKEN=$(grep "GITHUB_TOKEN" "$TMP_TOKENS" | cut -d'=' -f2 | tr -d ' \r')
+# --- Leer tokens de R2 ---
+rclone copy "r2:comfy-models/config/tokens.txt" "/tmp/" --fast-list 2>/dev/null || true
+if [ -f "/tmp/tokens.txt" ]; then
+  [ -z "$GITHUB_TOKEN" ]   && export GITHUB_TOKEN=$(grep   "^GITHUB_TOKEN"   /tmp/tokens.txt | cut -d'=' -f2- | tr -d ' \r')
+  [ -z "$HF_TOKEN" ]       && export HF_TOKEN=$(grep       "^HF_TOKEN"       /tmp/tokens.txt | cut -d'=' -f2- | tr -d ' \r')
+  [ -z "$CIVITAI_TOKEN" ]  && export CIVITAI_TOKEN=$(grep  "^CIVITAI_TOKEN"  /tmp/tokens.txt | cut -d'=' -f2- | tr -d ' \r')
 fi
 
-# --- 1. Workflows ---
+# --- 1. Workflows (--update sube solo si es más nuevo) ---
 echo ""
 echo "[1/4] 📋 Subiendo workflows..."
 rclone copy "$COMFY_DIR/user/" "$R2_BUCKET/user/" \
-  --transfers 16 --fast-list --ignore-existing \
+  --transfers 16 --fast-list --update \
   --exclude "*.db"
 echo "✅ Workflows salvados."
 
@@ -47,35 +47,34 @@ echo "✅ Workflows salvados."
 echo ""
 echo "[2/4] 🎨 Subiendo loras..."
 rclone copy "$COMFY_DIR/models/loras/" "$R2_BUCKET/loras/" \
-  --transfers 16 --fast-list --ignore-existing
+  --transfers 16 --fast-list --update
 echo "✅ Loras salvadas."
 
 # --- 3. Input ---
 echo ""
 echo "[3/4] 🖼  Subiendo imágenes de input..."
 rclone copy "$COMFY_DIR/input/" "$R2_BUCKET/input/" \
-  --transfers 16 --fast-list --ignore-existing
+  --transfers 16 --fast-list --update
 echo "✅ Input salvado."
 
-# --- 4. Custom nodes → GitHub ---
+# --- 4. Custom nodes → GitHub (solo si cambiaron) ---
 echo ""
-echo "[4/4] 🧩 Actualizando custom nodes en GitHub..."
+echo "[4/4] 🧩 Verificando custom nodes..."
 
 if [ -z "$GITHUB_TOKEN" ]; then
-  echo "SKIP: GITHUB_TOKEN no configurado."
+  echo "SKIP: GITHUB_TOKEN no encontrado en tokens.txt."
 else
   NODES_DIR="$COMFY_DIR/custom_nodes"
   CLONE_LINES=""
   for dir in "$NODES_DIR"/*/; do
-    node_name=$(basename "$dir")
     remote_url=$(git -C "$dir" remote get-url origin 2>/dev/null || echo "")
     [ -z "$remote_url" ] && continue
     remote_url="${remote_url%.git}.git"
-    echo "  + $node_name"
     CLONE_LINES="${CLONE_LINES}    git clone --depth 1 ${remote_url} &&\n"
   done
   CLONE_LINES=$(printf "%b" "$CLONE_LINES" | sed '$ s/ &&$//')
 
+  # Obtener Dockerfile actual de GitHub
   API_URL="https://api.github.com/repos/${GITHUB_REPO}/contents/Dockerfile"
   RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
     -H "Accept: application/vnd.github.v3+json" "$API_URL")
@@ -98,18 +97,24 @@ print(result, end='')
 PYEOF
 )
 
-  ENCODED=$(echo "$NEW_CONTENT" | base64 | tr -d '\n')
-  PUSH_RESPONSE=$(curl -s -X PUT \
-    -H "Authorization: token $GITHUB_TOKEN" \
-    -H "Accept: application/vnd.github.v3+json" \
-    "$API_URL" \
-    -d "{\"message\": \"chore: save_all sync nodes\", \"content\": \"$ENCODED\", \"sha\": \"$FILE_SHA\", \"branch\": \"$BRANCH\"}")
-
-  COMMIT=$(echo "$PUSH_RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('commit',{}).get('sha','ERROR'))" 2>/dev/null || echo "ERROR")
-  if [ "$COMMIT" = "ERROR" ]; then
-    echo "WARN: No se pudo actualizar Dockerfile en GitHub."
+  # Comparar — solo pushear si cambió algo
+  if [ "$NEW_CONTENT" = "$CURRENT_CONTENT" ]; then
+    echo "✅ Nodes sin cambios — no se necesita rebuild."
   else
-    echo "✅ Nodes actualizados. Commit: $COMMIT"
+    echo "  Cambios detectados — actualizando Dockerfile..."
+    ENCODED=$(echo "$NEW_CONTENT" | base64 | tr -d '\n')
+    PUSH_RESPONSE=$(curl -s -X PUT \
+      -H "Authorization: token $GITHUB_TOKEN" \
+      -H "Accept: application/vnd.github.v3+json" \
+      "$API_URL" \
+      -d "{\"message\": \"chore: sync custom nodes\", \"content\": \"$ENCODED\", \"sha\": \"$FILE_SHA\", \"branch\": \"$BRANCH\"}")
+
+    COMMIT=$(echo "$PUSH_RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('commit',{}).get('sha','ERROR'))" 2>/dev/null || echo "ERROR")
+    if [ "$COMMIT" = "ERROR" ]; then
+      echo "WARN: No se pudo actualizar Dockerfile."
+    else
+      echo "✅ Nodes actualizados → nuevo build disparado. Commit: ${COMMIT:0:7}"
+    fi
   fi
 fi
 
