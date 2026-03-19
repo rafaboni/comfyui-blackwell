@@ -1,165 +1,16 @@
 #!/bin/bash
-# download_models.sh — descarga packs en paralelo con progreso
-# SELECTED_PACKS env var: nombres separados por | o "ALL"
+# download_models.sh
+# Descarga packs seleccionados desde models_to_download.txt en R2
+# SELECTED_PACKS env var: nombres de packs separados por | (ej: "Klein 9B fp8|WAN 2.2 I2V")
+# Si SELECTED_PACKS="ALL" descarga todos los packs
 
 COMFY_DIR="/workspace/ComfyUI"
 R2_BUCKET="r2:comfy-models"
 TMP_DIR="/tmp/kb_models"
 TMP_TXT="$TMP_DIR/models_to_download.txt"
 TMP_TOKENS="$TMP_DIR/tokens.txt"
-PIDS_FILE="$TMP_DIR/download_pids.txt"
-PARTIAL_FILE="$TMP_DIR/partial_files.txt"
 
 mkdir -p "$TMP_DIR"
-> "$PIDS_FILE"
-> "$PARTIAL_FILE"
-
-echo "========================================="
-echo "  KB Tools - Descargar Modelos"
-echo "========================================="
-
-# --- Configurar rclone ---
-mkdir -p ~/.config/rclone
-cat > ~/.config/rclone/rclone.conf << EOF
-[r2]
-type = s3
-provider = Other
-access_key_id = ${R2_ACCESS_KEY}
-secret_access_key = ${R2_SECRET_KEY}
-endpoint = ${R2_ENDPOINT}
-acl = private
-EOF
-
-# --- Leer config de R2 ---
-echo "→ Leyendo config desde R2..."
-rclone copy "$R2_BUCKET/config/tokens.txt" "$TMP_DIR/" --fast-list 2>/dev/null || true
-rclone copy "$R2_BUCKET/config/models_to_download.txt" "$TMP_DIR/" --fast-list
-
-if [ ! -f "$TMP_TXT" ]; then
-  echo "ERROR: No se encontró models_to_download.txt en R2."
-  exit 1
-fi
-
-# --- Leer tokens ---
-HF_TOKEN=""
-CIVITAI_TOKEN=""
-if [ -f "$TMP_TOKENS" ]; then
-  HF_TOKEN=$(grep "^HF_TOKEN" "$TMP_TOKENS" | cut -d'=' -f2- | tr -d ' \r')
-  CIVITAI_TOKEN=$(grep "^CIVITAI_TOKEN" "$TMP_TOKENS" | cut -d'=' -f2- | tr -d ' \r')
-fi
-
-# --- Función de descarga individual (corre en background) ---
-download_file_bg() {
-  local url="$1"
-  local dest_abs="$2"
-  local fname=$(basename "$dest_abs")
-
-  # Skip si ya existe
-  if [ -f "$dest_abs" ]; then
-    echo "PROGRESS:${fname}:100:0"
-    echo "  ✓ Ya existe: $fname"
-    return 0
-  fi
-
-  mkdir -p "$(dirname "$dest_abs")"
-  echo "$dest_abs" >> "$PARTIAL_FILE"
-
-  local auth_header=""
-  local final_url="$url"
-  if echo "$url" | grep -q "huggingface.co" && [ -n "$HF_TOKEN" ]; then
-    auth_header="-H \"Authorization: Bearer $HF_TOKEN\""
-  elif echo "$url" | grep -q "civitai.com" && [ -n "$CIVITAI_TOKEN" ]; then
-    final_url="${url}?token=${CIVITAI_TOKEN}"
-  fi
-
-  # Obtener tamaño total
-  local total_bytes=$(eval curl -sI $auth_header "$final_url" 2>/dev/null | grep -i content-length | awk '{print $2}' | tr -d '\r')
-  [ -z "$total_bytes" ] && total_bytes=0
-
-  # Descargar en background
-  eval curl -L --no-progress-meter $auth_header -o "$dest_abs" "$final_url" 2>/dev/null &
-  local curl_pid=$!
-  local start_time=$(date +%s)
-
-  while kill -0 $curl_pid 2>/dev/null; do
-    sleep 1
-    if [ -f "$dest_abs" ] && [ "$total_bytes" -gt 0 ]; then
-      local current=$(stat -c%s "$dest_abs" 2>/dev/null || echo 0)
-      local pct=$(( current * 100 / total_bytes ))
-      local elapsed=$(( $(date +%s) - start_time ))
-      local speed=0
-      [ "$elapsed" -gt 0 ] && speed=$(python3 -c "print(round($current / 1048576 / $elapsed, 1))")
-      echo "PROGRESS:${fname}:${pct}:${speed}"
-    fi
-  done
-
-  wait $curl_pid
-  local exit_code=$?
-
-  if [ $exit_code -ne 0 ] || [ ! -s "$dest_abs" ]; then
-    echo "PROGRESS:${fname}:ERROR:0"
-    echo "  ❌ Error: $fname"
-    rm -f "$dest_abs"
-    sed -i "\|$dest_abs|d" "$PARTIAL_FILE"
-    return 1
-  fi
-
-  local elapsed=$(( $(date +%s) - start_time ))
-  local size_mb=$(python3 -c "print(round($(stat -c%s "$dest_abs") / 1048576, 1))")
-  local avg=0
-  [ "$elapsed" -gt 0 ] && avg=$(python3 -c "print(round($size_mb / $elapsed, 1))")
-  echo "PROGRESS:${fname}:100:${avg}"
-  echo "  ✅ ${fname} — ${size_mb}MB @ ${avg} MB/s"
-  sed -i "\|$dest_abs|d" "$PARTIAL_FILE"
-}
-
-export -f download_file_bg
-export HF_TOKEN CIVITAI_TOKEN COMFY_DIR TMP_DIR PARTIAL_FILE
-
-# --- Parsear y lanzar descargas en paralelo ---
-current_pack=""
-in_selected_pack=false
-declare -a bg_pids
-
-while IFS= read -r line; do
-  line="${line%$'\r'}"
-  [[ -z "$line" || "$line" =~ ^# ]] && continue
-
-  if [[ "$line" =~ ^PACK:\ (.*) ]]; then
-    current_pack="${BASH_REMATCH[1]}"
-    if [ "$SELECTED_PACKS" = "ALL" ] || echo "$SELECTED_PACKS" | grep -qF "$current_pack"; then
-      in_selected_pack=true
-      echo ""
-      echo "📦 Pack: $current_pack"
-    else
-      in_selected_pack=false
-    fi
-    continue
-  fi
-
-  if [ "$in_selected_pack" = true ]; then
-    url=$(echo "$line" | awk '{print $1}')
-    dest=$(echo "$line" | awk '{print $2}')
-    [ -z "$url" ] || [ -z "$dest" ] && continue
-    dest_abs="$COMFY_DIR/$dest"
-    # Lanzar en paralelo
-    download_file_bg "$url" "$dest_abs" &
-    bg_pids+=($!)
-    echo $! >> "$PIDS_FILE"
-  fi
-done < "$TMP_TXT"
-
-# --- Esperar a que terminen todos ---
-echo ""
-echo "⏳ Descargando ${#bg_pids[@]} archivos en paralelo..."
-for pid in "${bg_pids[@]}"; do
-  wait $pid 2>/dev/null
-done
-
-echo ""
-echo "✅ Descarga completa."
-rm -f "$PIDS_FILE" "$PARTIAL_FILE"
-
 
 echo "========================================="
 echo "  KB Tools - Descargar Modelos"

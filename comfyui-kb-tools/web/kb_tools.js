@@ -191,7 +191,6 @@ async function pollJob(jobId, outputEl, statusEl, buttons, successMsg) {
 
 // Poll especializado para descargas con barras de progreso
 async function pollDownloadJob(jobId, progressContainer, statusEl, buttons, successMsg) {
-  return new Promise(async (resolve) => {
   progressContainer.innerHTML = "";
   progressContainer.classList.add("visible");
   statusEl.className = "kb-status";
@@ -285,19 +284,18 @@ async function pollDownloadJob(jobId, progressContainer, statusEl, buttons, succ
         statusEl.className = ok ? "kb-status ok" : "kb-status err";
         statusEl.textContent = ok ? (successMsg || "✅ Completado") : `❌ Error (código ${data.returncode})`;
         buttons.forEach(b => b.disabled = false);
-        resolve();
         break;
       }
     } catch(e) {
       statusEl.className = "kb-status err";
       statusEl.textContent = "❌ Error de comunicación";
       buttons.forEach(b => b.disabled = false);
-      resolve();
       break;
     }
   }
-  }); // end Promise
-}(url, body, outputEl, statusEl, buttons, successMsg) {
+}
+
+async function startJob(url, body, outputEl, statusEl, buttons, successMsg) {
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -332,7 +330,7 @@ function buildPanel() {
   const saveSection = document.createElement("div");
   saveSection.className = "kb-section-save";
   const saveLabel = document.createElement("label");
-  saveLabel.textContent = "Workflows + Loras + Input → R2";
+  saveLabel.textContent = "Workflows + Loras + Input → R2 | Nodes → GitHub";
   const saveBtn = document.createElement("button");
   saveBtn.className = "kb-btn kb-btn-save";
   saveBtn.textContent = "💾 SALVAR TODO";
@@ -409,31 +407,7 @@ function buildPanel() {
   downloadBtn.className = "kb-btn kb-btn-success";
   downloadBtn.textContent = "⬇ Descargar";
 
-  const cancelBtn = document.createElement("button");
-  cancelBtn.className = "kb-btn kb-btn-neutral";
-  cancelBtn.textContent = "❌ Cancelar";
-  cancelBtn.style.display = "none";
-
-  dlBtnRow.append(selectAllBtn, downloadBtn, cancelBtn);
-
-  cancelBtn.addEventListener("click", async () => {
-    cancelBtn.disabled = true;
-    cancelBtn.textContent = "⏳ Cancelando...";
-    try {
-      const res = await fetch("/kb_tools/cancel_download", { method: "POST" });
-      const data = await res.json();
-      dlStatus.className = "kb-status err";
-      dlStatus.textContent = `🛑 Cancelado — ${data.cleaned || 0} archivos eliminados.`;
-    } catch(e) {
-      dlStatus.className = "kb-status err";
-      dlStatus.textContent = "❌ Error al cancelar";
-    }
-    cancelBtn.style.display = "none";
-    cancelBtn.textContent = "❌ Cancelar";
-    cancelBtn.disabled = false;
-    downloadBtn.disabled = false;
-    selectAllBtn.disabled = false;
-  });
+  dlBtnRow.append(selectAllBtn, downloadBtn);
 
   const dlProgressContainer = document.createElement("div");
   dlProgressContainer.className = "kb-progress-container";
@@ -459,9 +433,7 @@ function buildPanel() {
     .then(r => r.json())
     .then(data => {
       if (data.job_id) {
-        cancelBtn.style.display = "";
-        pollDownloadJob(data.job_id, dlProgressContainer, dlStatus, [downloadBtn, selectAllBtn], "✅ Modelos descargados.")
-          .finally(() => { cancelBtn.style.display = "none"; });
+        pollDownloadJob(data.job_id, dlProgressContainer, dlStatus, [downloadBtn, selectAllBtn], "✅ Modelos descargados.");
       } else {
         dlStatus.className = "kb-status err";
         dlStatus.textContent = "❌ No se pudo iniciar";

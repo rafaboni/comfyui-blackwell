@@ -119,42 +119,6 @@ async def download_models(request):
     ).start()
     return web.json_response({"job_id": job_id})
 
-@routes.post("/kb_tools/cancel_download")
-async def cancel_download(request):
-    """Mata todos los procesos de descarga y limpia archivos parciales."""
-    import subprocess
-    try:
-        # Matar procesos listados en pids file
-        pids_file = "/tmp/kb_models/download_pids.txt"
-        partial_file = "/tmp/kb_models/partial_files.txt"
-
-        killed = 0
-        if os.path.exists(pids_file):
-            with open(pids_file) as f:
-                for pid in f.read().splitlines():
-                    try:
-                        subprocess.run(["kill", "-9", pid.strip()], capture_output=True)
-                        killed += 1
-                    except:
-                        pass
-
-        # Borrar archivos parciales
-        cleaned = 0
-        if os.path.exists(partial_file):
-            with open(partial_file) as f:
-                for path in f.read().splitlines():
-                    path = path.strip()
-                    if path and os.path.exists(path):
-                        os.remove(path)
-                        cleaned += 1
-
-        # Limpiar tmp
-        subprocess.run(["rm", "-f", pids_file, partial_file], capture_output=True)
-
-        return web.json_response({"ok": True, "killed": killed, "cleaned": cleaned})
-    except Exception as e:
-        return web.json_response({"ok": False, "error": str(e)})
-
 @routes.post("/kb_tools/sync_input")
 async def sync_input(request):
     import uuid
