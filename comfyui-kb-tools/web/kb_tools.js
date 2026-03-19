@@ -461,6 +461,7 @@ function buildPanel() {
     .then(r => r.json())
     .then(data => {
       if (data.job_id) {
+        dlProgressContainer.innerHTML = "";
         cancelBtn.style.display = "";
         pollDownloadJob(data.job_id, dlProgressContainer, dlStatus, [downloadBtn, selectAllBtn], "✅ Modelos descargados.")
           .finally(() => { cancelBtn.style.display = "none"; });
