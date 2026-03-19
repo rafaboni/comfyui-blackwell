@@ -29,7 +29,6 @@ jobs:
           context: .
           push: true
           tags: rafaboni/comfyui-blackwell:latest
-          no-cache: true
           build-args: |
             CACHE_DATE=${{ github.run_id }}
         env:
