@@ -644,6 +644,13 @@ function buildPanel() {
   return panel;
 }
 
+// Estado global persistente entre renders
+const _rbState = {
+  activeJobId: null,
+  activeJobType: null, // 'download' | 'save' | 'nodes' | 'input'
+  lastLines: 0,
+};
+
 app.registerExtension({
   name: "RBTools.Panel",
   async setup() {
@@ -655,7 +662,12 @@ app.registerExtension({
         tooltip: "Salvar sesión y descargar modelos",
         type: "custom",
         render(el) {
-          el.appendChild(buildPanel());
+          // Reusar panel existente si ya fue creado
+          let panel = document.getElementById("rb-tools-panel");
+          if (!panel) {
+            panel = buildPanel();
+          }
+          el.appendChild(panel);
         }
       });
     } else {
