@@ -239,8 +239,8 @@ async function pollDownloadJob(jobId, progressContainer, statusEl, buttons, succ
           // PROGRESS:filename:pct:speed
           const parts = line.split(":");
           const fname = parts[1];
-          const pct   = parseInt(parts[2]) || 0;
-          const speed = parts[3] || "0";
+          const pct   = Math.min(100, Math.max(0, parseInt(parts[2]) || 0));
+          const speed = parseFloat(parts[3]) || 0;
           const bar = getOrCreateBar(fname);
           bar.fill.style.width = pct + "%";
           bar.infoEl.textContent = `${pct}% — ${speed} MB/s`;

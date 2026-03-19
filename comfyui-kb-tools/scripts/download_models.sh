@@ -124,7 +124,7 @@ for i in "${!URLS[@]}"; do
       sleep 1
       if [ -f "$dest" ] && [ "$TOTAL" -gt 0 ]; then
         CURRENT=$(stat -c%s "$dest" 2>/dev/null || echo 0)
-        PCT=$(( CURRENT * 100 / TOTAL ))
+        PCT=$(python3 -c "print(min(99, int($CURRENT * 100 / $TOTAL)))")
         ELAPSED=$(( $(date +%s) - START ))
         SPEED=0
         [ "$ELAPSED" -gt 0 ] && SPEED=$(python3 -c "print(round($CURRENT/1048576/$ELAPSED,1))")
