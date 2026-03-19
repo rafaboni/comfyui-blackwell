@@ -540,7 +540,6 @@ function buildPanel() {
   const editorLabel = document.createElement("label");
   editorLabel.textContent = "✏️ Agregar Pack de Modelos";
 
-  // Form fields
   function makeField(placeholder) {
     const inp = document.createElement("input");
     inp.type = "text";
@@ -549,10 +548,13 @@ function buildPanel() {
     return inp;
   }
 
-  const packNameInput = makeField("Nombre del pack (ej: Klein 9B fp8)");
-  const modelInput    = makeField("URL modelo (diffusion_model)");
-  const clipInput     = makeField("URL text encoder (clip/t5/qwen)");
-  const vaeInput      = makeField("URL VAE");
+  const packNameInput  = makeField("* Nombre del pack (ej: WAN 2.2 Animate)");
+  const modelInput     = makeField("Modelo principal (diffusion_model)");
+  const model2Input    = makeField("Modelo 2 (ej: low noise, segunda parte)");
+  const textEncInput   = makeField("Text Encoder (clip/t5/qwen/umt5)");
+  const clipVisionInput= makeField("Clip Vision (para I2V)");
+  const vaeInput       = makeField("VAE");
+  const loraInput      = makeField("LoRA (acelerador o adaptador)");
 
   const addPackBtn = document.createElement("button");
   addPackBtn.className = "kb-btn kb-btn-primary";
@@ -563,41 +565,54 @@ function buildPanel() {
   const editorStatus = document.createElement("div");
   editorStatus.className = "kb-status";
 
-  // Inferir destino desde URL
   function inferDest(url, type) {
     const fname = url.split("/").pop().split("?")[0];
-    if (type === "model") return `models/diffusion_models/${fname}`;
-    if (type === "clip")  return `models/text_encoders/${fname}`;
-    if (type === "vae")   return `models/vae/${fname}`;
+    if (type === "model")      return `models/diffusion_models/${fname}`;
+    if (type === "text_enc")   return `models/text_encoders/${fname}`;
+    if (type === "clip_vision")return `models/clip_vision/${fname}`;
+    if (type === "vae")        return `models/vae/${fname}`;
+    if (type === "lora")       return `models/loras/${fname}`;
     return `models/${fname}`;
   }
 
   addPackBtn.addEventListener("click", async () => {
-    const name  = packNameInput.value.trim();
-    const model = modelInput.value.trim();
-    const clip  = clipInput.value.trim();
-    const vae   = vaeInput.value.trim();
-
-    if (!name || !model || !clip || !vae) {
+    const name = packNameInput.value.trim();
+    if (!name) {
       editorStatus.className = "kb-status err";
-      editorStatus.textContent = "❌ Completa todos los campos.";
+      editorStatus.textContent = "❌ El nombre del pack es obligatorio.";
+      return;
+    }
+
+    // Recopilar campos con URL — solo los que tienen valor
+    const fields = [
+      { url: modelInput.value.trim(),      type: "model" },
+      { url: model2Input.value.trim(),     type: "model" },
+      { url: textEncInput.value.trim(),    type: "text_enc" },
+      { url: clipVisionInput.value.trim(), type: "clip_vision" },
+      { url: vaeInput.value.trim(),        type: "vae" },
+      { url: loraInput.value.trim(),       type: "lora" },
+    ].filter(f => f.url);
+
+    if (fields.length === 0) {
+      editorStatus.className = "kb-status err";
+      editorStatus.textContent = "❌ Agrega al menos una URL.";
       return;
     }
 
     editorStatus.className = "kb-status";
-    editorStatus.textContent = "⏳ Cargando lista actual...";
+    editorStatus.textContent = "⏳ Guardando...";
 
     try {
-      // Leer txt actual
       const res = await fetch("/rb_tools/models_txt");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      // Armar nuevo pack
-      const newPack = `\nPACK: ${name}\n${model} ${inferDest(model, "model")}\n${clip} ${inferDest(clip, "clip")}\n${vae} ${inferDest(vae, "vae")}\n`;
+      let newPack = `\nPACK: ${name}\n`;
+      for (const f of fields) {
+        newPack += `${f.url} ${inferDest(f.url, f.type)}\n`;
+      }
       const newContent = (data.content || "").trimEnd() + newPack;
 
-      // Guardar en R2
       const saveRes = await fetch("/rb_tools/save_models_txt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -607,15 +622,13 @@ function buildPanel() {
       if (!saveData.ok) throw new Error(saveData.error || "Error guardando");
 
       editorStatus.className = "kb-status ok";
-      editorStatus.textContent = `✅ Pack "${name}" agregado. Recarga RB Tools para verlo.`;
+      editorStatus.textContent = `✅ Pack "${name}" agregado.`;
 
       // Limpiar campos
-      packNameInput.value = "";
-      modelInput.value = "";
-      clipInput.value = "";
-      vaeInput.value = "";
+      [packNameInput, modelInput, model2Input, textEncInput, clipVisionInput, vaeInput, loraInput]
+        .forEach(f => f.value = "");
 
-      // Recargar lista de packs
+      // Recargar lista
       modelList.innerHTML = "<div class='kb-model-empty'>Recargando...</div>";
       fetch("/rb_tools/models_list").then(r => r.json()).then(d => {
         modelList.innerHTML = "";
@@ -638,7 +651,11 @@ function buildPanel() {
     }
   });
 
-  editorSection.append(editorLabel, packNameInput, modelInput, clipInput, vaeInput, addPackBtn, editorStatus);
+  editorSection.append(
+    editorLabel, packNameInput, modelInput, model2Input,
+    textEncInput, clipVisionInput, vaeInput, loraInput,
+    addPackBtn, editorStatus
+  );
 
   panel.append(saveSection, dlSection, inputSection, nodesSection, editorSection);
   return panel;
