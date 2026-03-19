@@ -5,6 +5,7 @@ from aiohttp import web
 from server import PromptServer
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts")
+WEB_DIRECTORY = "./web"
 
 _output_buffers = {}
 _output_lock = threading.Lock()
@@ -42,7 +43,7 @@ def run_script(script_path, job_id, env_extra=None):
 
 routes = PromptServer.instance.routes
 
-@routes.post("/kb_tools/save_all")
+@routes.post("/rb_tools/save_all")
 async def save_all(request):
     import uuid
     job_id = str(uuid.uuid4())
@@ -53,7 +54,7 @@ async def save_all(request):
     ).start()
     return web.json_response({"job_id": job_id})
 
-@routes.post("/kb_tools/update_nodes")
+@routes.post("/rb_tools/update_nodes")
 async def update_nodes(request):
     import uuid
     job_id = str(uuid.uuid4())
@@ -64,7 +65,7 @@ async def update_nodes(request):
     ).start()
     return web.json_response({"job_id": job_id})
 
-@routes.get("/kb_tools/models_list")
+@routes.get("/rb_tools/models_list")
 async def models_list(request):
     """Lee models_to_download.txt de R2 y devuelve packs parseados."""
     import subprocess, tempfile, os
@@ -104,7 +105,7 @@ async def models_list(request):
         import shutil
         shutil.rmtree(tmp, ignore_errors=True)
 
-@routes.post("/kb_tools/download_models")
+@routes.post("/rb_tools/download_models")
 async def download_models(request):
     import uuid
     data = await request.json()
@@ -119,7 +120,43 @@ async def download_models(request):
     ).start()
     return web.json_response({"job_id": job_id})
 
-@routes.post("/kb_tools/sync_input")
+@routes.post("/rb_tools/cancel_download")
+async def cancel_download(request):
+    """Mata todos los procesos de descarga y limpia archivos parciales."""
+    import subprocess
+    try:
+        # Matar procesos listados en pids file
+        pids_file = "/tmp/kb_models/download_pids.txt"
+        partial_file = "/tmp/kb_models/partial_files.txt"
+
+        killed = 0
+        if os.path.exists(pids_file):
+            with open(pids_file) as f:
+                for pid in f.read().splitlines():
+                    try:
+                        subprocess.run(["kill", "-9", pid.strip()], capture_output=True)
+                        killed += 1
+                    except:
+                        pass
+
+        # Borrar archivos parciales
+        cleaned = 0
+        if os.path.exists(partial_file):
+            with open(partial_file) as f:
+                for path in f.read().splitlines():
+                    path = path.strip()
+                    if path and os.path.exists(path):
+                        os.remove(path)
+                        cleaned += 1
+
+        # Limpiar tmp
+        subprocess.run(["rm", "-f", pids_file, partial_file], capture_output=True)
+
+        return web.json_response({"ok": True, "killed": killed, "cleaned": cleaned})
+    except Exception as e:
+        return web.json_response({"ok": False, "error": str(e)})
+
+@routes.post("/rb_tools/sync_input")
 async def sync_input(request):
     import uuid
     data = await request.json()
@@ -132,7 +169,7 @@ async def sync_input(request):
     ).start()
     return web.json_response({"job_id": job_id})
 
-@routes.get("/kb_tools/models_txt")
+@routes.get("/rb_tools/models_txt")
 async def get_models_txt(request):
     """Lee models_to_download.txt de R2 y lo devuelve como texto."""
     import subprocess, tempfile, os
@@ -154,7 +191,7 @@ async def get_models_txt(request):
         import shutil
         shutil.rmtree(tmp, ignore_errors=True)
 
-@routes.post("/kb_tools/save_models_txt")
+@routes.post("/rb_tools/save_models_txt")
 async def save_models_txt(request):
     """Guarda models_to_download.txt en R2."""
     import subprocess, tempfile, os
@@ -178,7 +215,7 @@ async def save_models_txt(request):
         import shutil
         shutil.rmtree(tmp, ignore_errors=True)
 
-@routes.get("/kb_tools/output/{job_id}")
+@routes.get("/rb_tools/output/{job_id}")
 async def get_output(request):
     job_id = request.match_info["job_id"]
     with _output_lock:
@@ -194,6 +231,5 @@ async def get_output(request):
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
-WEB_DIRECTORY = "./web" # v20260318192633
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]

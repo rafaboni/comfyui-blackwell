@@ -1,7 +1,7 @@
 import { app } from "../../scripts/app.js";
 
 const STYLES = `
-#kb-tools-panel {
+#rb-tools-panel {
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -13,7 +13,7 @@ const STYLES = `
   overflow-y: auto;
   box-sizing: border-box;
 }
-#kb-tools-panel h3 {
+#rb-tools-panel h3 {
   margin: 0 0 8px 0;
   font-size: 14px;
   color: #fff;
@@ -148,9 +148,9 @@ const STYLES = `
 `;
 
 function injectStyles() {
-  if (document.getElementById("kb-tools-styles")) return;
+  if (document.getElementById("rb-tools-styles")) return;
   const s = document.createElement("style");
-  s.id = "kb-tools-styles";
+  s.id = "rb-tools-styles";
   s.textContent = STYLES;
   document.head.appendChild(s);
 }
@@ -165,7 +165,7 @@ async function pollJob(jobId, outputEl, statusEl, buttons, successMsg) {
   while (true) {
     await new Promise(r => setTimeout(r, 800));
     try {
-      const res = await fetch(`/kb_tools/output/${jobId}`);
+      const res = await fetch(`/rb_tools/output/${jobId}`);
       const data = await res.json();
       const newLines = data.lines.slice(lastLine);
       if (newLines.length > 0) {
@@ -229,7 +229,7 @@ async function pollDownloadJob(jobId, progressContainer, statusEl, buttons, succ
   while (true) {
     await new Promise(r => setTimeout(r, 600));
     try {
-      const res = await fetch(`/kb_tools/output/${jobId}`);
+      const res = await fetch(`/rb_tools/output/${jobId}`);
       const data = await res.json();
       const newLines = data.lines.slice(lastLine);
       lastLine = data.lines.length;
@@ -322,10 +322,10 @@ async function startJob(url, body, outputEl, statusEl, buttons, successMsg) {
 function buildPanel() {
   injectStyles();
   const panel = document.createElement("div");
-  panel.id = "kb-tools-panel";
+  panel.id = "rb-tools-panel";
 
   const title = document.createElement("h3");
-  title.textContent = "KB Tools";
+  title.textContent = "RB Tools";
   panel.appendChild(title);
 
   // ============================================================
@@ -343,7 +343,7 @@ function buildPanel() {
   const saveStatus = document.createElement("div");
   saveStatus.className = "kb-status";
   saveBtn.addEventListener("click", () => {
-    startJob("/kb_tools/save_all", {}, saveOutput, saveStatus, [saveBtn], "✅ Todo salvado — sesión segura 🎉");
+    startJob("/rb_tools/save_all", {}, saveOutput, saveStatus, [saveBtn], "✅ Todo salvado — sesión segura 🎉");
   });
   saveSection.append(saveLabel, saveBtn, saveStatus, saveOutput);
 
@@ -365,7 +365,7 @@ function buildPanel() {
 
   // Cargar lista desde R2
   let packData = [];
-  fetch("/kb_tools/models_list")
+  fetch("/rb_tools/models_list")
     .then(r => r.json())
     .then(data => {
       modelList.innerHTML = "";
@@ -422,7 +422,7 @@ function buildPanel() {
     cancelBtn.disabled = true;
     cancelBtn.textContent = "⏳ Cancelando...";
     try {
-      const res = await fetch("/kb_tools/cancel_download", { method: "POST" });
+      const res = await fetch("/rb_tools/cancel_download", { method: "POST" });
       const data = await res.json();
       dlStatus.className = "kb-status err";
       dlStatus.textContent = `🛑 Cancelado — ${data.cleaned || 0} archivos eliminados.`;
@@ -453,7 +453,7 @@ function buildPanel() {
     }
     const packs = checked.map(cb => cb.dataset.packName);
     // Iniciar job
-    fetch("/kb_tools/download_models", {
+    fetch("/rb_tools/download_models", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ packs })
@@ -503,10 +503,10 @@ function buildPanel() {
   const inputBtns = [inputDlBtn, inputUlBtn];
 
   inputDlBtn.addEventListener("click", () =>
-    startJob("/kb_tools/sync_input", { mode: "download" }, inputOutput, inputStatus, inputBtns, "✅ Input descargado.")
+    startJob("/rb_tools/sync_input", { mode: "download" }, inputOutput, inputStatus, inputBtns, "✅ Input descargado.")
   );
   inputUlBtn.addEventListener("click", () =>
-    startJob("/kb_tools/sync_input", { mode: "upload" }, inputOutput, inputStatus, inputBtns, "✅ Input subido.")
+    startJob("/rb_tools/sync_input", { mode: "upload" }, inputOutput, inputStatus, inputBtns, "✅ Input subido.")
   );
 
   inputSection.append(inputLabel, inputBtnRow, inputStatus, inputOutput);
@@ -527,7 +527,7 @@ function buildPanel() {
   const nodesStatus = document.createElement("div");
   nodesStatus.className = "kb-status";
   nodesBtn.addEventListener("click", () => {
-    startJob("/kb_tools/update_nodes", {}, nodesOutput, nodesStatus, [nodesBtn], "✅ Nodes actualizados → build disparado.");
+    startJob("/rb_tools/update_nodes", {}, nodesOutput, nodesStatus, [nodesBtn], "✅ Nodes actualizados → build disparado.");
   });
   nodesSection.append(nodesLabel, nodesBtn, nodesStatus, nodesOutput);
 
@@ -588,7 +588,7 @@ function buildPanel() {
 
     try {
       // Leer txt actual
-      const res = await fetch("/kb_tools/models_txt");
+      const res = await fetch("/rb_tools/models_txt");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
@@ -597,7 +597,7 @@ function buildPanel() {
       const newContent = (data.content || "").trimEnd() + newPack;
 
       // Guardar en R2
-      const saveRes = await fetch("/kb_tools/save_models_txt", {
+      const saveRes = await fetch("/rb_tools/save_models_txt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: newContent })
@@ -606,7 +606,7 @@ function buildPanel() {
       if (!saveData.ok) throw new Error(saveData.error || "Error guardando");
 
       editorStatus.className = "kb-status ok";
-      editorStatus.textContent = `✅ Pack "${name}" agregado. Recarga KB Tools para verlo.`;
+      editorStatus.textContent = `✅ Pack "${name}" agregado. Recarga RB Tools para verlo.`;
 
       // Limpiar campos
       packNameInput.value = "";
@@ -616,7 +616,7 @@ function buildPanel() {
 
       // Recargar lista de packs
       modelList.innerHTML = "<div class='kb-model-empty'>Recargando...</div>";
-      fetch("/kb_tools/models_list").then(r => r.json()).then(d => {
+      fetch("/rb_tools/models_list").then(r => r.json()).then(d => {
         modelList.innerHTML = "";
         (d.packs || []).forEach(pack => {
           const item = document.createElement("label");
@@ -644,13 +644,13 @@ function buildPanel() {
 }
 
 app.registerExtension({
-  name: "KBTools.Panel",
+  name: "RBTools.Panel",
   async setup() {
     if (app.extensionManager?.registerSidebarTab) {
       app.extensionManager.registerSidebarTab({
-        id: "kb-tools",
+        id: "rb-tools",
         icon: "pi pi-wrench",
-        title: "KB Tools",
+        title: "RB Tools",
         tooltip: "Salvar sesión y descargar modelos",
         type: "custom",
         render(el) {
@@ -661,7 +661,7 @@ app.registerExtension({
       const inject = () => {
         const menu = document.querySelector(".comfy-menu");
         if (!menu) { setTimeout(inject, 1000); return; }
-        if (document.getElementById("kb-tools-panel")) return;
+        if (document.getElementById("rb-tools-panel")) return;
         menu.appendChild(buildPanel());
       };
       setTimeout(inject, 2000);
