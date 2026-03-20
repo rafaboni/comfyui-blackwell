@@ -10,6 +10,13 @@ echo "root:root" | chpasswd
 sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 service ssh start
 
+# --- Terminal config ---
+echo 'export TERM=xterm-256color' >> /root/.bashrc
+echo 'export PS1="\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "' >> /root/.bashrc
+echo 'bind "set completion-ignore-case on"' >> /root/.bashrc
+echo 'bind "set show-all-if-ambiguous on"' >> /root/.bashrc
+cp /root/.bashrc /root/.bash_profile
+
 # --- Configurar rclone con R2 ---
 mkdir -p ~/.config/rclone
 cat > ~/.config/rclone/rclone.conf << EOF
