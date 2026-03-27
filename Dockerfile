@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+FROM nvidia/cuda:12.8.1-runtime-ubuntu24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
@@ -38,19 +38,13 @@ WORKDIR /workspace/ComfyUI/custom_nodes
 RUN git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager.git && \
     git clone --depth 1 https://github.com/MoonGoblinDev/Civicomfy.git && \
     git clone --depth 1 https://github.com/kijai/ComfyUI-KJNodes.git && \
-    git clone --depth 1 https://github.com/kijai/ComfyUI-Florence2.git && \
-    git clone --depth 1 https://github.com/kijai/ComfyUI-segment-anything-2.git && \
     git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Impact-Pack.git && \
-    git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Inspire-Pack.git && \
     git clone --depth 1 https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git && \
     git clone --depth 1 https://github.com/yolain/ComfyUI-Easy-Use.git && \
-    git clone --depth 1 https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git && \
     git clone --depth 1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git && \
-    git clone --depth 1 https://github.com/Fannovel16/comfyui_controlnet_aux.git && \
     git clone --depth 1 https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git && \
     git clone --depth 1 https://github.com/jags111/efficiency-nodes-comfyui.git && \
     git clone --depth 1 https://github.com/rgthree/rgthree-comfy.git && \
-    git clone --depth 1 https://github.com/WASasquatch/was-node-suite-comfyui.git && \
     git clone --depth 1 https://github.com/1038lab/ComfyUI-QwenVL.git && \
     git clone --depth 1 https://github.com/huchukato/ComfyUI-QwenVL-Mod.git && \
     git clone --depth 1 https://github.com/MadiatorLabs/ComfyUI-RunpodDirect.git
