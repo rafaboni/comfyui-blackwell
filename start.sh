@@ -5,7 +5,8 @@ echo "  ComfyUI Blackwell - Rafael Boni"
 echo "========================================="
 
 # --- SSH ---
-mkdir -p /run/sshd
+mkdir -p /run/sshd /root/.ssh
+chmod 700 /root/.ssh
 echo "root:root" | chpasswd
 sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 service ssh start
