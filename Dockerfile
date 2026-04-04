@@ -14,7 +14,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rclone \
     && ln -sf /usr/bin/python3 /usr/bin/python \
     && ln -sf /usr/bin/pip3 /usr/bin/pip \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /root/.ssh \
+    && chmod 700 /root/.ssh
+
+# --- SSH public keys (Rafael's key for remote access) ---
+COPY authorized_keys /root/.ssh/authorized_keys
+RUN chmod 600 /root/.ssh/authorized_keys
 
 # --- Filebrowser ---
 RUN curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
