@@ -9,7 +9,21 @@ mkdir -p /run/sshd /root/.ssh
 chmod 700 /root/.ssh
 echo "root:root" | chpasswd
 sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+# RunPod startSsh: true puede sobrescribir authorized_keys con PUBLIC_KEY → forzamos nuestra llave
+ssh-keygen -A 2>/dev/null
 service ssh start
+sleep 2
+# Si authorized_keys está vacía o solo tiene la de RunPod, ponemos la nuestra explicitamente
+if [ ! -s /root/.ssh/authorized_keys ] || ! grep -q 'IJGAUKBC' /root/.ssh/authorized_keys 2>/dev/null; then
+  MY_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGAUKBCNCYpQTCA8Phrgqh27p18j6BLTBo9ChlLJVZR runpod"
+  echo "$MY_KEY" >> /root/.ssh/authorized_keys
+  chmod 600 /root/.ssh/authorized_keys
+fi
+chown -R root:root /root/.ssh
+sshd -t 2>&1
+echo "SSH running on port 22: $(ss -tlnp | grep :22 || echo 'NOT LISTENING')" 
+echo "Authorized keys count: $(wc -l < /root/.ssh/authorized_keys)" 
+env | grep PUBLIC_KEY > /dev/null && echo "RunPod PUBLIC_KEY: YES" || echo "RunPod PUBLIC_KEY: NO"
 
 # --- Terminal config ---
 echo 'export TERM=xterm-256color' >> /root/.bashrc
