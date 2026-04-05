@@ -9,21 +9,30 @@ mkdir -p /run/sshd /root/.ssh
 chmod 700 /root/.ssh
 echo "root:root" | chpasswd
 sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-# RunPod startSsh: true puede sobrescribir authorized_keys con PUBLIC_KEY → forzamos nuestra llave
+sed -i 's/^PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
+echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config
 ssh-keygen -A 2>/dev/null
 service ssh start
 sleep 2
-# Si authorized_keys está vacía o solo tiene la de RunPod, ponemos la nuestra explicitamente
-if [ ! -s /root/.ssh/authorized_keys ] || ! grep -q 'IJGAUKBC' /root/.ssh/authorized_keys 2>/dev/null; then
-  MY_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGAUKBCNCYpQTCA8Phrgqh27p18j6BLTBo9ChlLJVZR runpod"
-  echo "$MY_KEY" >> /root/.ssh/authorized_keys
-  chmod 600 /root/.ssh/authorized_keys
+
+# 1) If SSH_PUBLIC_KEY env var is set, use it
+if [ -n "$SSH_PUBLIC_KEY" ]; then
+  echo "$SSH_PUBLIC_KEY" >> /root/.ssh/authorized_keys
+  echo "✅ SSH key injected from SSH_PUBLIC_KEY secret"
 fi
+
+# 2) Always ensure Rafael's Mac key is present (fallback)
+RAFAEL_PUB='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICqquqVPNxuxQhC7CcaEj9TJcsnK4H7AGkYZtY+xtHbY rafaboni'
+if ! grep -q 'qquqVPNxux' /root/.ssh/authorized_keys 2>/dev/null; then
+  echo "$RAFAEL_PUB" >> /root/.ssh/authorized_keys
+  chmod 600 /root/.ssh/authorized_keys
+  echo "✅ Rafael's SSH key added"
+fi
+
 chown -R root:root /root/.ssh
 sshd -t 2>&1
 echo "SSH running on port 22: $(ss -tlnp | grep :22 || echo 'NOT LISTENING')" 
-echo "Authorized keys count: $(wc -l < /root/.ssh/authorized_keys)" 
-env | grep PUBLIC_KEY > /dev/null && echo "RunPod PUBLIC_KEY: YES" || echo "RunPod PUBLIC_KEY: NO"
+echo "Authorized keys count: $(wc -l < /root/.ssh/authorized_keys)"
 
 # --- Terminal config ---
 echo 'export TERM=xterm-256color' >> /root/.bashrc
