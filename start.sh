@@ -1,10 +1,12 @@
 #!/bin/bash
+# start.sh — Vast.ai / Entrypoint startup for ComfyUI Blackwell
+set -euo pipefail
 
 echo "========================================="
 echo "  ComfyUI Blackwell - Rafael Boni"
 echo "========================================="
 
-# --- SSH ---
+# ── SSH ──────────────────────────────────────────────────────────────────────
 mkdir -p /run/sshd /root/.ssh
 chmod 700 /root/.ssh
 echo "root:root" | chpasswd
@@ -12,16 +14,14 @@ sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd
 sed -i 's/^PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
 echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config
 ssh-keygen -A 2>/dev/null
-service ssh start
-sleep 2
 
-# 1) If SSH_PUBLIC_KEY env var is set, use it
-if [ -n "$SSH_PUBLIC_KEY" ]; then
+# SSH key from env var (Vast injects SSH_PUBLIC_KEY as a secret)
+if [[ -n "${SSH_PUBLIC_KEY:-}" ]]; then
   echo "$SSH_PUBLIC_KEY" >> /root/.ssh/authorized_keys
-  echo "✅ SSH key injected from SSH_PUBLIC_KEY secret"
+  echo "✅ SSH key injected from secret"
 fi
 
-# 2) Always ensure Rafael's Mac key is present (fallback)
+# Rafael's Mac key — siempre presente
 RAFAEL_PUB='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICqquqVPNxuxQhC7CcaEj9TJcsnK4H7AGkYZtY+xtHbY rafaboni'
 if ! grep -q 'qquqVPNxux' /root/.ssh/authorized_keys 2>/dev/null; then
   echo "$RAFAEL_PUB" >> /root/.ssh/authorized_keys
@@ -31,35 +31,56 @@ fi
 
 chown -R root:root /root/.ssh
 sshd -t 2>&1
-echo "SSH running on port 22: $(ss -tlnp | grep :22 || echo 'NOT LISTENING')" 
-echo "Authorized keys count: $(wc -l < /root/.ssh/authorized_keys)"
+service ssh start 2>/dev/null || true
+echo "SSH running: $(ss -tlnp | grep :22 || echo 'check manually')"
 
-# --- Terminal config ---
+# ── Terminal config ────────────────────────────────────────────────────────────
 echo 'export TERM=xterm-256color' >> /root/.bashrc
 echo 'export PS1="\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "' >> /root/.bashrc
 echo 'bind "set completion-ignore-case on"' >> /root/.bashrc
 echo 'bind "set show-all-if-ambiguous on"' >> /root/.bashrc
-cp /root/.bashrc /root/.bash_profile
+cp /root/.bashrc /root/.bash_profile 2>/dev/null || true
 
-# --- Configurar rclone con R2 ---
-mkdir -p ~/.config/rclone
-cat > ~/.config/rclone/rclone.conf << EOF
+# ── R2 + rclone sync (background) ─────────────────────────────────────────────
+if [[ -n "${R2_ACCESS_KEY:-}" && -n "${R2_SECRET_KEY:-}" && -n "${R2_ENDPOINT:-}" ]]; then
+  mkdir -p ~/.config/rclone
+  cat > ~/.config/rclone/rclone.conf << 'RCLONE_EOF'
 [r2]
 type = s3
 provider = Other
-access_key_id = ${R2_ACCESS_KEY}
-secret_access_key = ${R2_SECRET_KEY}
-endpoint = ${R2_ENDPOINT}
+access_key_id = __R2_ACCESS_KEY__
+secret_access_key = __R2_SECRET_KEY__
+endpoint = __R2_ENDPOINT__
 acl = private
-EOF
+RCLONE_EOF
+  sed -i "s/__R2_ACCESS_KEY__/${R2_ACCESS_KEY}/" ~/.config/rclone/rclone.conf
+  sed -i "s/__R2_SECRET_KEY__/${R2_SECRET_KEY}/" ~/.config/rclone/rclone.conf
+  sed -i "s|__R2_ENDPOINT__|${R2_ENDPOINT}|" ~/.config/rclone/rclone.conf
 
-# --- FileBrowser ---
-echo "[1/3] Iniciando FileBrowser..."
+  mkdir -p /workspace/ComfyUI/output
+  (
+    echo "→ Workflows desde R2..."
+    rclone copy r2:comfy-models/user/ /workspace/ComfyUI/user/ \
+      --transfers 16 --fast-list --ignore-existing --exclude "*.db" 2>/dev/null || true
+    echo "→ Loras desde R2..."
+    rclone copy r2:comfy-models/loras/ /workspace/ComfyUI/models/loras/ \
+      --transfers 16 --fast-list --ignore-existing 2>/dev/null || true
+    echo "→ Input desde R2..."
+    rclone copy r2:comfy-models/input/ /workspace/ComfyUI/input/ \
+      --transfers 16 --fast-list --ignore-existing 2>/dev/null || true
+    echo "✅ Sync R2 completo"
+  ) &
+else
+  echo "⚠️  R2 credentials no encontradas — skip sync"
+fi
+
+# ── FileBrowser ────────────────────────────────────────────────────────────────
+echo "[1/3] FileBrowser..."
 mkdir -p /workspace/ComfyUI/output
 filebrowser -r /workspace -p 8080 --address 0.0.0.0 --noauth &
 
-# --- Jupyter ---
-echo "[2/3] Iniciando Jupyter Lab..."
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+echo "[2/3] Jupyter Lab..."
 cd /workspace && jupyter lab --allow-root --no-browser --port=8888 --ip=0.0.0.0 \
   --ServerApp.token='' \
   --ServerApp.password='' \
@@ -67,26 +88,8 @@ cd /workspace && jupyter lab --allow-root --no-browser --port=8888 --ip=0.0.0.0 
   --ServerApp.allow_remote_access=True \
   --ServerApp.disable_check_xsrf=True &
 
-# --- Descarga inicial en background ---
-echo "[3/3] Descargando workflows, loras e input desde R2 (background)..."
-(
-  echo "→ Workflows..."
-  rclone copy r2:comfy-models/user/ /workspace/ComfyUI/user/ \
-    --transfers 16 --fast-list --ignore-existing \
-    --exclude "*.db"
-
-  echo "→ Loras..."
-  rclone copy r2:comfy-models/loras/ /workspace/ComfyUI/models/loras/ \
-    --transfers 16 --fast-list --ignore-existing
-
-  echo "→ Input..."
-  rclone copy r2:comfy-models/input/ /workspace/ComfyUI/input/ \
-    --transfers 16 --fast-list --ignore-existing
-
-  echo "✅ Listo para trabajar."
-) &
-
-# --- ComfyUI (foreground) ---
-echo "Iniciando ComfyUI..."
+# ── ComfyUI (foreground) ───────────────────────────────────────────────────────
+echo "[3/3] Iniciando ComfyUI..."
+echo "========================================="
 cd /workspace/ComfyUI
 python main.py --listen 0.0.0.0 --port 8188
