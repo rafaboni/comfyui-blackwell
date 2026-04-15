@@ -34,7 +34,6 @@ jobs:
           tags: rafaboni/comfyui-blackwell:latest
           build-args: |
             CACHE_DATE=${{ github.run_id }}
-          cache-from: type=no
           no-cache-fallback: true
         env:
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true

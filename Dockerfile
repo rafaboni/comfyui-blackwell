@@ -23,7 +23,7 @@ COPY authorized_keys /root/.ssh/authorized_keys
 RUN chmod 600 /root/.ssh/authorized_keys
 
 # --- Filebrowser ---
-RUN curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
+RUN curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash || true
 
 # --- Jupyter ---
 RUN pip install jupyterlab
@@ -35,7 +35,8 @@ RUN pip install --pre torch torchvision torchaudio \
 # --- ComfyUI ---
 ARG CACHE_DATE
 WORKDIR /workspace
-RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git
+RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git && \
+    test -f ComfyUI/main.py || (echo "FATAL: ComfyUI/main.py not found!" && exit 1)
 WORKDIR /workspace/ComfyUI
 RUN pip install -r requirements.txt
 
