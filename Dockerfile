@@ -34,14 +34,14 @@ RUN pip install --pre torch torchvision torchaudio \
 
 # --- ComfyUI ---
 ARG CACHE_DATE
-WORKDIR /workspace
+WORKDIR /comfyuiworkspace
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git && \
     test -f ComfyUI/main.py || (echo "FATAL: ComfyUI/main.py not found!" && exit 1)
-WORKDIR /workspace/ComfyUI
+WORKDIR /comfyuiworkspace/ComfyUI
 RUN pip install -r requirements.txt
 
 # --- Custom Nodes ---
-WORKDIR /workspace/ComfyUI/custom_nodes
+WORKDIR /comfyuiworkspace/ComfyUI/custom_nodes
 RUN git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager.git && \
     git clone --depth 1 https://github.com/MoonGoblinDev/Civicomfy.git && \
     git clone --depth 1 https://github.com/kijai/ComfyUI-KJNodes.git && \
@@ -57,14 +57,14 @@ RUN git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager.git && \
     git clone --depth 1 https://github.com/MadiatorLabs/ComfyUI-RunpodDirect.git
 
 # --- Dependencias de custom nodes ---
-RUN for dir in /workspace/ComfyUI/custom_nodes/*/; do \
+RUN for dir in /comfyuiworkspace/ComfyUI/custom_nodes/*/; do \
         [ -f "$dir/requirements.txt" ] && \
         pip install -r "$dir/requirements.txt" || true; \
     done
 
 # --- KB Tools custom node ---
-COPY comfyui-kb-tools/ /workspace/ComfyUI/custom_nodes/comfyui-kb-tools/
-RUN chmod +x /workspace/ComfyUI/custom_nodes/comfyui-kb-tools/scripts/*.sh
+COPY comfyui-kb-tools/ /comfyuiworkspace/ComfyUI/custom_nodes/comfyui-kb-tools/
+RUN chmod +x /comfyuiworkspace/ComfyUI/custom_nodes/comfyui-kb-tools/scripts/*.sh
 
 # --- Script de inicio ---
 COPY start.sh /start.sh

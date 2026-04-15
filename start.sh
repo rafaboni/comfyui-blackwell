@@ -57,16 +57,16 @@ RCLONE_EOF
   sed -i "s/__R2_SECRET_KEY__/${R2_SECRET_KEY}/" ~/.config/rclone/rclone.conf
   sed -i "s|__R2_ENDPOINT__|${R2_ENDPOINT}|" ~/.config/rclone/rclone.conf
 
-  mkdir -p /workspace/ComfyUI/output
+  mkdir -p /comfyuiworkspace/ComfyUI/output
   (
     echo "→ Workflows desde R2..."
-    rclone copy r2:comfy-models/user/ /workspace/ComfyUI/user/ \
+    rclone copy r2:comfy-models/user/ /comfyuiworkspace/ComfyUI/user/ \
       --transfers 16 --fast-list --ignore-existing --exclude "*.db" 2>/dev/null || true
     echo "→ Loras desde R2..."
-    rclone copy r2:comfy-models/loras/ /workspace/ComfyUI/models/loras/ \
+    rclone copy r2:comfy-models/loras/ /comfyuiworkspace/ComfyUI/models/loras/ \
       --transfers 16 --fast-list --ignore-existing 2>/dev/null || true
     echo "→ Input desde R2..."
-    rclone copy r2:comfy-models/input/ /workspace/ComfyUI/input/ \
+    rclone copy r2:comfy-models/input/ /comfyuiworkspace/ComfyUI/input/ \
       --transfers 16 --fast-list --ignore-existing 2>/dev/null || true
     echo "✅ Sync R2 completo"
   ) &
@@ -76,12 +76,12 @@ fi
 
 # ── FileBrowser ────────────────────────────────────────────────────────────────
 echo "[1/3] FileBrowser..."
-mkdir -p /workspace/ComfyUI/output
-filebrowser -r /workspace -p 8080 --address 0.0.0.0 --noauth &
+mkdir -p /comfyuiworkspace/ComfyUI/output
+filebrowser -r /comfyuiworkspace -p 8080 --address 0.0.0.0 --noauth &
 
 # ── Jupyter ───────────────────────────────────────────────────────────────────
 echo "[2/3] Jupyter Lab..."
-cd /workspace && jupyter lab --allow-root --no-browser --port=8888 --ip=0.0.0.0 \
+cd /comfyuiworkspace && jupyter lab --allow-root --no-browser --port=8888 --ip=0.0.0.0 \
   --ServerApp.token='' \
   --ServerApp.password='' \
   --ServerApp.allow_origin='*' \
@@ -91,5 +91,5 @@ cd /workspace && jupyter lab --allow-root --no-browser --port=8888 --ip=0.0.0.0 
 # ── ComfyUI (foreground) ───────────────────────────────────────────────────────
 echo "[3/3] Iniciando ComfyUI..."
 echo "========================================="
-cd /workspace/ComfyUI
+cd /comfyuiworkspace/ComfyUI
 python main.py --listen 0.0.0.0 --port 8188
