@@ -1,7 +1,7 @@
 #!/bin/bash
 # download_models.sh — descarga paralela con progreso real usando Python requests
 
-COMFY_DIR="/workspace/ComfyUI"
+COMFY_DIR="${COMFY_DIR:-/comfyuiworkspace/ComfyUI}"
 R2_BUCKET="r2:comfy-models"
 TMP_DIR="/tmp/kb_models"
 
@@ -34,7 +34,7 @@ fi
 SELECTED_PACKS="${SELECTED_PACKS}" python3 << 'PYEOF'
 import os, sys, threading, time, requests
 
-COMFY_DIR = "/workspace/ComfyUI"
+COMFY_DIR = os.environ.get("COMFY_DIR", "/comfyuiworkspace/ComfyUI")
 TMP_DIR = "/tmp/kb_models"
 SELECTED = os.environ.get("SELECTED_PACKS", "ALL")
 PIDS_FILE = f"{TMP_DIR}/download_pids.txt"

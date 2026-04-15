@@ -2,7 +2,7 @@
 # update_nodes.sh — actualiza el Dockerfile en GitHub con los custom nodes actuales
 # Solo usar cuando instales o desinstales un custom node
 
-COMFY_DIR="/workspace/ComfyUI"
+COMFY_DIR="${COMFY_DIR:-/comfyuiworkspace/ComfyUI}"
 GITHUB_REPO="rafaboni/comfyui-blackwell"
 BRANCH="main"
 
@@ -71,7 +71,7 @@ for i, url in enumerate(url_list):
     else:
         lines.append(f"    git clone --depth 1 {url}")
 
-clone_block = "# --- Custom Nodes ---\nWORKDIR /workspace/ComfyUI/custom_nodes\nRUN " + "\n".join(lines)
+clone_block = "# --- Custom Nodes ---\nWORKDIR " + os.environ.get("COMFY_DIR", "/comfyuiworkspace/ComfyUI") + "/custom_nodes\nRUN " + "\n".join(lines)
 
 content = open('/dev/stdin').read() if False else """${CURRENT_CONTENT}"""
 pattern = r'# --- Custom Nodes ---.*?(?=# --- Dependencias)'

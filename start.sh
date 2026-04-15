@@ -6,6 +6,9 @@ echo "========================================="
 echo "  ComfyUI Blackwell - Rafael Boni"
 echo "========================================="
 
+# ── Directorio base de ComfyUI (dynamico para躲开 RunPod volume mount) ───────
+export COMFY_DIR="/comfyuiworkspace/ComfyUI"
+
 # ── SSH ──────────────────────────────────────────────────────────────────────
 mkdir -p /run/sshd /root/.ssh
 chmod 700 /root/.ssh

@@ -2,7 +2,7 @@
 # sync_input.sh — sube o baja la carpeta input
 # MODE env var: upload | download
 
-INPUT_DIR="/workspace/ComfyUI/input"
+INPUT_DIR="${COMFY_DIR:-/comfyuiworkspace/ComfyUI}/input"
 R2_BUCKET="r2:comfy-models"
 MODE="${MODE:-upload}"
 

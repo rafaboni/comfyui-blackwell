@@ -2,8 +2,8 @@
 # sync_models.sh — sincroniza modelos entre pod y R2
 # Lee SYNC_MODE: download | upload | both | dryrun
 
-MODELS_DIR="/workspace/ComfyUI/models"
-INPUT_DIR="/workspace/ComfyUI/input"
+MODELS_DIR="${COMFY_DIR:-/comfyuiworkspace/ComfyUI}/models"
+INPUT_DIR="${COMFY_DIR:-/comfyuiworkspace/ComfyUI}/input"
 R2_BUCKET="r2:comfy-models"
 MODE="${SYNC_MODE:-download}"
 
