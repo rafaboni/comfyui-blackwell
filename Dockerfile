@@ -5,6 +5,10 @@ ENV PYTHONUNBUFFERED=1
 ENV PIP_NO_CACHE_DIR=1
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
 
+# --- Fix apt mirrors (use us.archive.ubuntu.com + retry on transient failures) ---
+RUN sed -i 's|http://archive.ubuntu.com|https://us.archive.ubuntu.com|g' /etc/apt/sources.list && \
+    echo "Acquire::Retries 5;" > /etc/apt/apt.conf.d/80retry
+
 # --- System deps ---
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-pip python3-dev \
