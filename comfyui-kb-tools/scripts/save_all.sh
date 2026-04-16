@@ -2,7 +2,7 @@
 # save_all.sh — sube workflows + loras + input + actualiza nodes en GitHub
 set -e
 
-COMFY_DIR="/workspace/ComfyUI"
+COMFY_DIR="${COMFY_DIR:-/comfyuiworkspace/ComfyUI}"
 R2_BUCKET="r2:comfy-models"
 GITHUB_REPO="rafaboni/comfyui-blackwell"
 BRANCH="main"
