@@ -50,40 +50,73 @@ if [ -z "$FILE_SHA" ]; then
   exit 1
 fi
 
-CURRENT_CONTENT=$(echo "$RESPONSE" | python3 -c "
+# Decodificar contenido actual a archivo temporal
+echo "$RESPONSE" | python3 -c "
 import sys, json, base64
 d = json.load(sys.stdin)
-print(base64.b64decode(d['content']).decode('utf-8'))
-")
+sys.stdout.buffer.write(base64.b64decode(d['content']))
+" > /tmp/current_dockerfile.txt
 
-# --- Generar nuevo bloque de custom nodes con Python ---
-NEW_CONTENT=$(python3 << PYEOF
-import re, json
+if [ ! -s /tmp/current_dockerfile.txt ]; then
+  echo "ERROR: Dockerfile actual esta vacio o no se pudo decodificar."
+  exit 1
+fi
 
-urls = json.loads('${URLS[@]@Q}' if False else '''${URLS[*]}'''.replace('\n', ' ').strip())
-# Parsear lista de URLs
-url_list = [u.strip() for u in """$(printf '%s\n' "${URLS[@]}")""".strip().split('\n') if u.strip()]
+# Guardar URLs en archivo temporal (una por linea)
+printf '%s\n' "${URLS[@]}" > /tmp/node_urls.txt
 
+# --- Generar nuevo Dockerfile con Python ---
+NEW_CONTENT=$(COMFY_DIR="$COMFY_DIR" python3 << 'PYEOF'
+import re, os, sys
+
+# Leer URLs desde archivo temporal
+with open('/tmp/node_urls.txt', 'r') as f:
+    url_list = [u.strip() for u in f.readlines() if u.strip()]
+
+if not url_list:
+    print("ERROR: lista de URLs vacia", file=sys.stderr)
+    sys.exit(1)
+
+# Generar bloque RUN git clone
 lines = []
 for i, url in enumerate(url_list):
     if i < len(url_list) - 1:
-        lines.append(f"    git clone --depth 1 {url} && \\\\")
+        lines.append(f"    git clone --depth 1 {url} && \\")
     else:
         lines.append(f"    git clone --depth 1 {url}")
 
-clone_block = "# --- Custom Nodes ---\nWORKDIR " + os.environ.get("COMFY_DIR", "/comfyuiworkspace/ComfyUI") + "/custom_nodes\nRUN " + "\n".join(lines)
+comfy_dir = os.environ.get("COMFY_DIR", "/comfyuiworkspace/ComfyUI")
+clone_block = (
+    "# --- Custom Nodes ---\n"
+    f"WORKDIR {comfy_dir}/custom_nodes\n"
+    "RUN " + "\n".join(lines)
+)
 
-content = open('/dev/stdin').read() if False else """${CURRENT_CONTENT}"""
-pattern = r'# --- Custom Nodes ---.*?(?=# --- Dependencias)'
-replacement = clone_block + "\n\n"
+# Leer Dockerfile actual
+with open('/tmp/current_dockerfile.txt', 'r') as f:
+    content = f.read()
+
+# Reemplazar seccion Custom Nodes
+pattern = r'# --- Custom Nodes ---.*?(?=\n# --- Dependencias)'
+replacement = clone_block + "\n"
 result = re.sub(pattern, replacement, content, flags=re.DOTALL)
+
+if result == content:
+    print("WARN: No se encontro la seccion Custom Nodes en el Dockerfile", file=sys.stderr)
+
 print(result, end='')
 PYEOF
 )
 
-# --- Verificar si cambió ---
+if [ $? -ne 0 ] || [ -z "$NEW_CONTENT" ]; then
+  echo "ERROR: Fallo la generacion del nuevo Dockerfile."
+  exit 1
+fi
+
+# --- Verificar si cambio ---
+CURRENT_CONTENT=$(cat /tmp/current_dockerfile.txt)
 if [ "$NEW_CONTENT" = "$CURRENT_CONTENT" ]; then
-  echo "✅ Sin cambios en custom nodes — no se necesita rebuild."
+  echo "Sin cambios en custom nodes — no se necesita rebuild."
   exit 0
 fi
 
@@ -103,6 +136,9 @@ if [ "$COMMIT" = "ERROR" ]; then
   exit 1
 fi
 
-echo "✅ Dockerfile actualizado. Commit: ${COMMIT:0:7}"
-echo "🔨 GitHub Actions está buildeando la nueva imagen..."
+echo "Dockerfile actualizado. Commit: ${COMMIT:0:7}"
+echo "GitHub Actions esta buildeando la nueva imagen..."
 echo "   https://github.com/${GITHUB_REPO}/actions"
+
+# Limpiar archivos temporales
+rm -f /tmp/current_dockerfile.txt /tmp/node_urls.txt
