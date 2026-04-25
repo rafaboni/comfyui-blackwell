@@ -1,0 +1,11 @@
+# WAN 2.2 Animate Models - URLs for RB Tools Download
+# Format: URL\nlocal_path\n\n
+PACK: WAN 2.2 Animate
+https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/Wan22Animate/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors
+models/checkpoints/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors
+https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/umt5-xxl-enc-fp8_e4m3fn.safetensors
+models/text_encoders/umt5-xxl-enc-fp8_e4m3fn.safetensors
+https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors
+models/vae/Wan2_1_VAE_bf16.safetensors
+https://huggingface.co/Wan-AI/Wan2.2-Animate-14B/resolve/main/process_checkpoint/det/yolov10m.onnx
+models/detection/yolov10m.onnx
