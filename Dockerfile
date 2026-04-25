@@ -61,6 +61,7 @@ RUN git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager.git && \
     git clone --depth 1 https://github.com/MadiatorLabs/ComfyUI-RunpodDirect.git && \
         git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git && \
             git clone --depth 1 https://github.com/kijai/ComfyUI-segment-anything-2.git
+            git clone --depth 1 https://github.com/kijai/ComfyUI-WanAnimatePreprocess.git && \
 
 # --- Dependencias de custom nodes ---
 RUN for dir in /comfyuiworkspace/ComfyUI/custom_nodes/*/; do \
