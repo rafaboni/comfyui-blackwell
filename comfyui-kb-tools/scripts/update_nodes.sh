@@ -30,7 +30,9 @@ for dir in "$NODES_DIR"/*/; do
   [ -z "$remote_url" ] && continue
   remote_url="${remote_url%.git}.git"
   echo "  + $(basename $dir)"
-  URLS+=("$remote_url")
+  # Conserva la rama si no es la por defecto del clone (p. ej. rgthree-comfy usa main; su default dev esta congelada)
+  branch=$(git -C "$dir" rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)
+  URLS+=("$remote_url $branch")
 done
 
 if [ ${#URLS[@]} -eq 0 ]; then
@@ -79,11 +81,13 @@ if not url_list:
 
 # Generar bloque RUN git clone
 lines = []
-for i, url in enumerate(url_list):
+for i, entry in enumerate(url_list):
+    url, _, branch = entry.partition(" ")
+    br = f"--branch {branch} " if branch and branch != "HEAD" else ""
     if i < len(url_list) - 1:
-        lines.append(f"    git clone --depth 1 {url} && \\")
+        lines.append(f"    git clone --depth 1 {br}{url} && \\")
     else:
-        lines.append(f"    git clone --depth 1 {url}")
+        lines.append(f"    git clone --depth 1 {br}{url}")
 
 comfy_dir = os.environ.get("COMFY_DIR", "/comfyuiworkspace/ComfyUI")
 clone_block = (
