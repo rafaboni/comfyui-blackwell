@@ -1,11 +1,218 @@
-# WAN 2.2 Animate Models - URLs for RB Tools Download
-# Format: URL\nlocal_path\n\n
-PACK: WAN 2.2 Animate
-https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/Wan22Animate/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors
-models/checkpoints/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors
-https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/umt5-xxl-enc-fp8_e4m3fn.safetensors
-models/text_encoders/umt5-xxl-enc-fp8_e4m3fn.safetensors
-https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors
-models/vae/Wan2_1_VAE_bf16.safetensors
-https://huggingface.co/Wan-AI/Wan2.2-Animate-14B/resolve/main/process_checkpoint/det/yolov10m.onnx
-models/detection/yolov10m.onnx
+PACK: Klein 9B
+https://huggingface.co/black-forest-labs/FLUX.2-klein-9B/resolve/main/flux-2-klein-9b.safetensors models/diffusion_models/FLUX2/flux-2-klein-9b.safetensors
+https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors models/text_encoders/qwen_3_8b_fp8mixed.safetensors
+https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/vae/flux2-vae.safetensors models/vae/flux2-vae.safetensors
+
+
+PACK: Klein Base 9B fp8
+https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8/resolve/main/flux-2-klein-base-9b-fp8.safetensors models/diffusion_models/FLUX2/flux-2-klein-base-9b-fp8.safetensors
+https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors models/text_encoders/qwen_3_8b_fp8mixed.safetensors
+https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/vae/flux2-vae.safetensors models/vae/flux2-vae.safetensors
+
+
+PACK: WAN 2.2 Animate - I2V - T2V
+https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/Wan22Animate/Wan2_2-Animate-14B_fp8_e4m3fn_scaled_KJ.safetensors models/diffusion_models/Wan2_2-Animate-14B_fp8_e4m3fn_scaled_KJ.safetensors
+https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors models/diffusion_models/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors
+https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/I2V/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors models/diffusion_models/Wan2_2-I2V-A14B-LOW_fp8_e4m3fn_scaled_KJ.safetensors
+https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/T2V/Wan2_2-T2V-A14B-HIGH_fp8_e5m2_scaled_KJ.safetensors models/diffusion_models/Wan2_2-T2V-A14B-HIGH_fp8_e5m2_scaled_KJ.safetensors
+https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/T2V/Wan2_2-T2V-A14B-LOW_fp8_e5m2_scaled_KJ.safetensors models/diffusion_models/Wan2_2-T2V-A14B-LOW_fp8_e5m2_scaled_KJ.safetensors
+https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors
+https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors models/clip_vision/clip_vision_h.safetensors
+https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors models/vae/wan_2.1_vae.safetensors
+
+
+PACK: Qwen3-VL-8B-Instruct-Abliterated (huihui-ai) - 17.6GB BF16
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/added_tokens.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/added_tokens.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/chat_template.jinja models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/chat_template.jinja
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/config.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/config.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/generation_config.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/generation_config.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/merges.txt models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/merges.txt
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/model-00001-of-00004.safetensors models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/model-00001-of-00004.safetensors
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/model-00002-of-00004.safetensors models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/model-00002-of-00004.safetensors
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/model-00003-of-00004.safetensors models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/model-00003-of-00004.safetensors
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/model-00004-of-00004.safetensors models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/model-00004-of-00004.safetensors
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/model.safetensors.index.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/model.safetensors.index.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/preprocessor_config.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/preprocessor_config.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/special_tokens_map.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/special_tokens_map.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/tokenizer.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/tokenizer.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/tokenizer_config.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/tokenizer_config.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/video_preprocessor_config.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/video_preprocessor_config.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated/resolve/main/vocab.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-8B-Instruct-abliterated/vocab.json
+
+
+PACK: Qwen3-VL-4B-Instruct-Abliterated (huihui-ai) - ~8GB BF16
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/added_tokens.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/added_tokens.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/chat_template.jinja models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/chat_template.jinja
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/config.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/config.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/generation_config.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/generation_config.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/merges.txt models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/merges.txt
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/model-00001-of-00002.safetensors models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/model-00001-of-00002.safetensors
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/model-00002-of-00002.safetensors models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/model-00002-of-00002.safetensors
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/model.safetensors.index.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/model.safetensors.index.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/preprocessor_config.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/preprocessor_config.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/special_tokens_map.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/special_tokens_map.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/tokenizer.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/tokenizer.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/tokenizer_config.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/tokenizer_config.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/video_preprocessor_config.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/video_preprocessor_config.json
+https://huggingface.co/huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated/resolve/main/vocab.json models/LLM/Qwen-VL/Huihui-Qwen3-VL-4B-Instruct-abliterated/vocab.json
+
+
+PACK: Qwen3-VL-8B-Instruct-abliterated-v1 (prithivMLmods) - F32 ~32GB ⚠️ MUY PESADO
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/added_tokens.json models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/added_tokens.json
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/chat_template.jinja models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/chat_template.jinja
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/config.json models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/config.json
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/generation_config.json models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/generation_config.json
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/merges.txt models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/merges.txt
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/model-00001-of-00006.safetensors models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/model-00001-of-00006.safetensors
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/model-00002-of-00006.safetensors models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/model-00002-of-00006.safetensors
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/model-00003-of-00006.safetensors models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/model-00003-of-00006.safetensors
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/model-00004-of-00006.safetensors models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/model-00004-of-00006.safetensors
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/model-00005-of-00006.safetensors models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/model-00005-of-00006.safetensors
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/model-00006-of-00006.safetensors models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/model-00006-of-00006.safetensors
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/model.safetensors.index.json models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/model.safetensors.index.json
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/preprocessor_config.json models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/preprocessor_config.json
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/special_tokens_map.json models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/special_tokens_map.json
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/tokenizer.json models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/tokenizer.json
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/tokenizer_config.json models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/tokenizer_config.json
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/video_preprocessor_config.json models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/video_preprocessor_config.json
+https://huggingface.co/prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1/resolve/main/vocab.json models/LLM/Qwen-VL/Qwen3-VL-8B-Instruct-abliterated-v1/vocab.json
+
+
+PACK: WAN 2.2 Animate KJ v2 (RECOMMENDED)
+https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/Wan22Animate/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors models/diffusion_models/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors
+https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/umt5-xxl-enc-fp8_e4m3fn.safetensors models/text_encoders/umt5-xxl-enc-fp8_e4m3fn.safetensors
+https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors models/vae/Wan2_1_VAE_bf16.safetensors
+
+
+PACK: Text Encoder Alternativo (BF16)
+https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/umt5-xxl-enc-bf16.safetensors models/text_encoders/umt5-xxl-enc-bf16.safetensors
+
+
+PACK: Detection Models - YOLOv10
+https://huggingface.co/Wan-AI/Wan2.2-Animate-14B/resolve/main/process_checkpoint/det/yolov10m.onnx models/detection/yolov10m.onnx
+
+
+PACK: Detection Models - ViTPose Wholebody Large
+https://huggingface.co/JunkyByte/easy_ViTPose/resolve/main/onnx/wholebody/vitpose-l-wholebody.onnx models/detection/vitpose-l-wholebody.onnx
+
+
+PACK: Detection Models - ViTPose Wholebody Huge (2 archivos)
+https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_model.onnx models/detection/vitpose_h_wholebody_model.onnx
+https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_data.bin models/detection/vitpose_h_wholebody_data.bin
+
+
+# ===== 10sorlabs (catalogo AI1-Model-Grabber v13, URLs verificadas 2026-10-15) =====
+# Generado de: catalogo publico 10sorlabs/AI1-Model-Grabber (catalog/workflows.json v13) + instalador 10sorlabs_local_model_installer_mac_linux.sh
+# Cruzado contra los 7 workflows (todos los nombres de archivo de los widgets estan cubiertos). 2026-10-15.
+# Formato: URL<espacio>destino relativo a ComfyUI. Todas las URLs son publicas (sin token, sin gating); tamano y sha256 verificados contra HF/instalador.
+# Los sha256 estan en 10sorlabs/AI1-Model-Grabber-src/catalog/workflows.json (campo sha256 por archivo).
+
+PACK: KREA2
+# Base Krea 2 (06 Image; tambien lo necesitan 07/08/09/LoRA Tester)
+# krea2_turbo_fp8_scaled.safetensors (13.14 GB) usado por: 06 Krea2 Image, 07 Image Edit, 08 Carousel, 09 Dataset Generator, LoRA Tester
+https://huggingface.co/Comfy-Org/Krea-2/resolve/main/diffusion_models/krea2_turbo_fp8_scaled.safetensors models/diffusion_models/krea2_turbo_fp8_scaled.safetensors
+# qwen3vl_4b_fp8_scaled.safetensors (6.02 GB) usado por: 06 Krea2 Image, 07 Image Edit, 08 Carousel, 09 Dataset Generator, LoRA Tester
+https://huggingface.co/hfmaster/models-moved/resolve/5b31b4d168315702592e8ee1130c9b794ca22b1c/qwen3vl/Qwen-3-VL-4B-Scaled-FP8.safetensors models/text_encoders/qwen3vl_4b_fp8_scaled.safetensors
+# qwen_image_vae.safetensors (0.25 GB) usado por: 06 Krea2 Image, 07 Image Edit, 08 Carousel, 09 Dataset Generator, LoRA Tester
+https://huggingface.co/QuantStack/Qwen-Image-Edit-GGUF/resolve/5cf642dd2b94af2a558ec06a9dde255c673e1fdf/VAE/Qwen_Image-VAE.safetensors models/vae/qwen_image_vae.safetensors
+# subtotal KREA2: 19.4 GB
+
+PACK: KREA2_EDIT
+# Extra para Image Edit / Carousel / Dataset Generator / LoRA Tester. El "edit patch" NO es un archivo: es el nodo comfyui-krea2edit (Krea2EditModelPatch); ver nodes_10sorlabs.txt
+# krea2_identity_edit_v1_2.safetensors (1.83 GB) usado por: 07 Image Edit, 08 Carousel, 09 Dataset Generator
+https://huggingface.co/conradlocke/krea2-identity-edit/resolve/main/krea2_identity_edit_v1_2.safetensors models/loras/krea2_identity_edit_v1_2.safetensors
+# krea2-bloomgirls-realism-step00004000.safetensors (0.47 GB) usado por: 07 Image Edit, 08 Carousel, 09 Dataset Generator
+https://huggingface.co/gravedigga/loras/resolve/main/krea2-bloomgirls-realism-step00004000.safetensors models/loras/krea2-bloomgirls-realism-step00004000.safetensors
+# snofs_krea_v1_4.safetensors (1.56 GB) usado por: 07 Image Edit, 08 Carousel, 09 Dataset Generator
+https://huggingface.co/gravedigga/loras/resolve/main/snofs_krea_v1_4.safetensors models/loras/snofs_krea_v1_4.safetensors
+# famegrid_spicy.safetensors (1.56 GB) usado por: 07 Image Edit, 08 Carousel, 09 Dataset Generator
+https://huggingface.co/gravedigga/loras/resolve/main/famegrid_spicy.safetensors models/loras/famegrid_spicy.safetensors
+# ass_v2_krea2_loraholic.safetensors (0.05 GB) usado por: 07 Image Edit, 08 Carousel, 09 Dataset Generator, LoRA Tester
+https://huggingface.co/gravedigga/loras/resolve/main/ass_v2_krea2_loraholic.safetensors models/loras/ass_v2_krea2_loraholic.safetensors
+# breast_size_v2_krea2_loraholic.safetensors (0.04 GB) usado por: 07 Image Edit, 08 Carousel, 09 Dataset Generator
+https://huggingface.co/gravedigga/loras/resolve/main/breast_size_v2_krea2_loraholic.safetensors models/loras/breast_size_v2_krea2_loraholic.safetensors
+# subtotal KREA2_EDIT: 5.5 GB
+
+PACK: KREA2_DETAILER
+# FaceDetailer del workflow 06 (upscaler, YOLO de caras, SAM)
+# 4xNMKDSuperscale_4xNMKDSuperscale.pt (0.07 GB) usado por: 06 Krea2 Image
+https://huggingface.co/gravedigga/loras/resolve/main/4xNMKDSuperscale_4xNMKDSuperscale.pt models/upscale_models/4xNMKDSuperscale_4xNMKDSuperscale.pt
+# face_yolov8m.pt (0.05 GB) usado por: 06 Krea2 Image
+https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/detection/bbox/face_yolov8m.pt models/ultralytics/bbox/face_yolov8m.pt
+# sam_vit_b_01ec64.pth (0.38 GB) usado por: 06 Krea2 Image
+https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/sams/sam_vit_b_01ec64.pth models/sams/sam_vit_b_01ec64.pth
+# subtotal KREA2_DETAILER: 0.5 GB
+
+PACK: SCAIL
+# Workflow 11 Motion Control SCAIL
+# wan2.1_14B_SCAIL_2_fp16.safetensors (32.79 GB) usado por: 11 SCAIL
+https://huggingface.co/Comfy-Org/SCAIL-2/resolve/main/diffusion_models/wan2.1_14B_SCAIL_2_fp16.safetensors models/diffusion_models/wan2.1_14B_SCAIL_2_fp16.safetensors
+# wan2.1_SCAIL_2_DPO_lora_bf16.safetensors (1.23 GB) usado por: 11 SCAIL
+https://huggingface.co/Comfy-Org/SCAIL-2/resolve/main/loras/wan2.1_SCAIL_2_DPO_lora_bf16.safetensors models/loras/wan2.1_SCAIL_2_DPO_lora_bf16.safetensors
+# wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors (0.74 GB) usado por: 11 SCAIL
+https://huggingface.co/lightx2v/Wan2.2-Distill-Loras/resolve/9ff6e8a86c2fcc7548256555ba274ecec69fefff/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors models/loras/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors
+# slop_twerk_LowNoise_merged3_7_v2.safetensors (0.31 GB) usado por: 11 SCAIL
+https://huggingface.co/gravedigga/loras/resolve/main/slop_twerk_LowNoise_merged3_7_v2.safetensors models/loras/slop_twerk_LowNoise_merged3_7_v2.safetensors
+# sam3.1_multiplex_fp16.safetensors (1.75 GB) usado por: 11 SCAIL
+https://huggingface.co/Comfy-Org/sam3.1/resolve/main/checkpoints/sam3.1_multiplex_fp16.safetensors models/checkpoints/sam3.1_multiplex_fp16.safetensors
+# clip_vision_h.safetensors (1.26 GB) usado por: 11 SCAIL, 12 Motion Control GOD
+https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors models/clip_vision/clip_vision_h.safetensors
+# wan_2.1_vae.safetensors (0.25 GB) usado por: 11 SCAIL
+https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors models/vae/wan_2.1_vae.safetensors
+# umt5-xxl-encoder-fp8-e4m3fn-scaled.safetensors (6.74 GB) usado por: 11 SCAIL
+# URL cambiada: el instalador apunta a refs/pr/5 (rama de PR, puede desaparecer); en main esta el mismo archivo (sha256 c3355d30...)
+https://huggingface.co/UmeAiRT/ComfyUI-Auto-Installer-Assets/resolve/main/models/text_encoders/T5/umt5-xxl-encoder-fp8-e4m3fn-scaled.safetensors models/text_encoders/umt5-xxl-encoder-fp8-e4m3fn-scaled.safetensors
+# subtotal SCAIL: 45.1 GB
+
+PACK: WAN22_ANIMATE_GOD
+# Workflow 12 Motion Control GOD Edition
+# wan2.2_animate_14B_bf16.safetensors (34.55 GB) usado por: 12 Motion Control GOD
+https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_animate_14B_bf16.safetensors models/diffusion_models/wan2.2_animate_14B_bf16.safetensors
+# wan2.2_animate_14B_relight_lora_bf16.safetensors (1.44 GB) usado por: 12 Motion Control GOD
+https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_animate_14B_relight_lora_bf16.safetensors models/loras/wan2.2_animate_14B_relight_lora_bf16.safetensors
+# lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank256_bf16.safetensors (2.50 GB) usado por: 12 Motion Control GOD
+https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank256_bf16.safetensors models/loras/lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank256_bf16.safetensors
+# wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors (1.23 GB) usado por: 12 Motion Control GOD
+https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors models/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors
+# Wan21_PusaV1_LoRA_14B_rank512_bf16.safetensors (4.91 GB) usado por: 12 Motion Control GOD
+https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Pusa/Wan21_PusaV1_LoRA_14B_rank512_bf16.safetensors models/loras/Wan21_PusaV1_LoRA_14B_rank512_bf16.safetensors
+# Wan2.2-Fun-A14B-InP-low-noise-MPS.safetensors (0.86 GB) usado por: 12 Motion Control GOD
+# URL cambiada: el repo del instalador (smegmarip/ComfyUI) responde 401 hoy; este es el original de Alibaba PAI, mismo tamano y mismo sha256 (0e6ac56c...)
+https://huggingface.co/alibaba-pai/Wan2.2-Fun-Reward-LoRAs/resolve/main/Wan2.2-Fun-A14B-InP-low-noise-MPS.safetensors models/loras/Wan2.2-Fun-A14B-InP-low-noise-MPS.safetensors
+# Wan2_1_VAE_bf16.safetensors (0.25 GB) usado por: 12 Motion Control GOD
+https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors models/vae/Wan2_1_VAE_bf16.safetensors
+# umt5_xxl_fp16.safetensors (11.37 GB) usado por: 12 Motion Control GOD
+https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors models/text_encoders/umt5_xxl_fp16.safetensors
+# clip_vision_h.safetensors (1.26 GB) usado por: 11 SCAIL, 12 Motion Control GOD
+https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors models/clip_vision/clip_vision_h.safetensors
+# yolov10m.onnx (0.06 GB) usado por: 12 Motion Control GOD
+https://huggingface.co/Wan-AI/Wan2.2-Animate-14B/resolve/main/process_checkpoint/det/yolov10m.onnx models/detection/yolov10m.onnx
+# vitpose_h_wholebody_model.onnx (0.00 GB) usado por: 12 Motion Control GOD
+https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_model.onnx models/detection/vitpose_h_wholebody_model.onnx
+# vitpose_h_wholebody_data.bin (2.55 GB) usado por: 12 Motion Control GOD
+https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_data.bin models/detection/vitpose_h_wholebody_data.bin
+# sam2.1_hiera_base_plus.safetensors (0.32 GB) usado por: 12 Motion Control GOD
+https://huggingface.co/fofr/comfyui/resolve/main/sam2/sam2.1_hiera_base_plus.safetensors models/sams/sam2.1_hiera_base_plus.safetensors
+# rife49.pth (0.02 GB) usado por: 12 Motion Control GOD
+# Ademas hay que enlazarlo (hardlink/copia) a custom_nodes/ComfyUI-Frame-Interpolation/ckpts/rife/rife49.pth (link_model del instalador). Es release de GitHub, no HF.
+https://github.com/Fannovel16/ComfyUI-Frame-Interpolation/releases/download/models/rife49.pth models/frame_interpolation/rife49.pth
+# subtotal WAN22_ANIMATE_GOD: 61.3 GB
+
+# --- OPCIONAL (esta en el instalador SCAIL pero NINGUN workflow lo referencia) ---
+# https://huggingface.co/gravedigga/loras/resolve/main/slop_twerk_HighNoise_merged3_7_v2.safetensors models/loras/slop_twerk_HighNoise_merged3_7_v2.safetensors
+
+
+# ===== MiniMax H3 pesos abiertos (plantillas oficiales ComfyUI) =====
+PACK: MINIMAX_H3_T2V_I2V
+https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors models/diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors
+https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors models/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors
+https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_video_vae_int8_convrot.safetensors models/vae/minimax_h3_video_vae_int8_convrot.safetensors
+https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_audio_vae_fp32.safetensors models/vae/minimax_h3_audio_vae_fp32.safetensors
+https://huggingface.co/lightx2v/Minimax-h3-Turbo/resolve/main/minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors models/loras/minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors
+
+PACK: MINIMAX_H3_R2V
+https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors models/diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors
+https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors models/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors
+https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_video_vae_int8_convrot.safetensors models/vae/minimax_h3_video_vae_int8_convrot.safetensors
+https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_audio_vae_fp32.safetensors models/vae/minimax_h3_audio_vae_fp32.safetensors
+https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors models/loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors

@@ -3,7 +3,7 @@
 # Solo usar cuando instales o desinstales un custom node
 
 COMFY_DIR="${COMFY_DIR:-/comfyuiworkspace/ComfyUI}"
-GITHUB_REPO="rafaboni/comfyui-blackwell"
+GITHUB_REPO="${GITHUB_REPO:-rafaboni/comfyui-blackwell}"  # lo fija el Dockerfile de cada imagen
 BRANCH="main"
 
 echo "========================================="

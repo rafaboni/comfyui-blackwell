@@ -91,6 +91,14 @@ cd /comfyuiworkspace && jupyter lab --allow-root --no-browser --port=8888 --ip=0
   --ServerApp.allow_remote_access=True \
   --ServerApp.disable_check_xsrf=True &
 
+# ── MCP comfy-pod (:8190, solo con token) ─────────────────────────────────────
+if [[ -n "${MCP_TOKEN:-}" ]]; then
+  echo "[MCP] comfy-pod en :8190 (log /var/log/comfy-pod-mcp.log)"
+  bash /opt/comfy-pod-mcp/run_mcp.sh &
+else
+  echo "⚠️  MCP_TOKEN no definido — MCP comfy-pod apagado"
+fi
+
 # ── ComfyUI (foreground) ───────────────────────────────────────────────────────
 echo "[3/3] Iniciando ComfyUI..."
 echo "========================================="

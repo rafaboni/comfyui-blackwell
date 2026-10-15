@@ -4,7 +4,7 @@ set -e
 
 COMFY_DIR="${COMFY_DIR:-/comfyuiworkspace/ComfyUI}"
 R2_BUCKET="r2:comfy-models"
-GITHUB_REPO="rafaboni/comfyui-blackwell"
+GITHUB_REPO="${GITHUB_REPO:-rafaboni/comfyui-blackwell}"  # lo fija el Dockerfile de cada imagen
 BRANCH="main"
 
 echo "========================================="

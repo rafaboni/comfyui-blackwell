@@ -1,0 +1,4 @@
+# Versiones verificadas en PyPI el 2026-10-15 (pip index versions). mcp 2.x exige Python >= 3.10.
+mcp==2.3.0
+httpx==0.28.1
+uvicorn==0.54.0
