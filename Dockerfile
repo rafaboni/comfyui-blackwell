@@ -78,10 +78,12 @@ RUN git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager.git && \
     git clone --depth 1 https://github.com/evanspearman/ComfyMath.git
 # --- Dependencias de custom nodes ---
 # Bajo PIP_CONSTRAINT (torch congelado). Los fallos quedan en /comfyuiworkspace/node_deps_failed.txt.
+# Reintento sin aislamiento de build: sam2 (Impact-Pack) choca con el constraint de torch dentro del entorno aislado.
 # nvidia-vfx (Nvidia_RTX_Nodes) vive en pypi.nvidia.com.
 RUN for dir in /comfyuiworkspace/ComfyUI/custom_nodes/*/; do \
     [ -f "$dir/requirements.txt" ] || continue; \
     pip install --extra-index-url https://pypi.nvidia.com -r "$dir/requirements.txt" \
+      || pip install --no-build-isolation --extra-index-url https://pypi.nvidia.com -r "$dir/requirements.txt" \
       || echo "$dir" >> /comfyuiworkspace/node_deps_failed.txt; \
     done; \
     pip uninstall -y onnxruntime || true; \
