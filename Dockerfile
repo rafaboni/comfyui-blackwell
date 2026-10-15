@@ -15,6 +15,7 @@ RUN sed -i 's|http://archive.ubuntu.com|https://us.archive.ubuntu.com|g' /etc/ap
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-pip python3-dev \
     git git-lfs wget curl ffmpeg bc \
+    gcc g++ \
     libgl1 libglib2.0-0 libsm6 libxext6 libxrender-dev \
     openssh-server \
     rclone \
