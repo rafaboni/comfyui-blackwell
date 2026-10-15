@@ -21,6 +21,7 @@ VIRTUAL = {"Reroute", "PrimitiveNode", "SetNode", "GetNode"}
 CONTROL_VALUES = {"fixed", "increment", "decrement", "randomize"}
 SEED_NAMES = {"seed", "noise_seed"}
 WIDGET_TYPES = {"INT", "FLOAT", "STRING", "BOOLEAN", "COMBO"}
+DYNAMIC_COMBO = "COMFY_DYNAMICCOMBO_V3"
 UPLOAD_KEYS = ("image_upload", "video_upload", "audio_upload")
 MAX_DEPTH = 300
 
@@ -215,7 +216,28 @@ class Converter:
         names = {n for n, _ in order}
         inputs: dict[str, Any] = {}
         pos = 0
-        for name, spec in order:
+        # COMFY_DYNAMICCOMBO_V3 (nodos V3, p. ej. SaveVideo.format): el widget guarda la clave elegida y
+        # las entradas de esa opción siguen en widgets_values con nombre "padre.hija" (comfy_api/latest/_io.py).
+        queue = list(order)
+        while queue:
+            name, spec = queue.pop(0)
+            _t, _o = _spec_parts(spec)
+            if _t == DYNAMIC_COMBO:
+                key = None
+                if isinstance(wv, list) and pos < len(wv):
+                    key, pos = wv[pos], pos + 1
+                elif isinstance(wv, dict) and name in wv:
+                    key = wv[name]
+                if key is None:
+                    continue  # sin valor guardado: el frontend no la serializó (p. ej. SaveVideo.codec suelto)
+                opts_list = _o.get("options") or []
+                chosen = next((op for op in opts_list if op.get("key") == key), None)
+                inputs[name] = key
+                if chosen:
+                    sub = _ordered_inputs({"input": chosen.get("inputs") or {}})
+                    queue[0:0] = [(f"{name}.{n}", s) for n, s in sub]
+                    names.update(f"{name}.{n}" for n, _ in sub)
+                continue
             literal: Any = None
             has_literal = False
             if _is_widget(spec):
@@ -243,6 +265,14 @@ class Converter:
                     continue
             if has_literal:
                 inputs[name] = literal
+        # rgthree Power Lora Loader: cada fila del widget es un dict {on, lora, strength[, strengthTwo]}
+        # que el backend lee como kwargs LORA_<n> (py/power_lora_loader.py, load_loras).
+        if t == "Power Lora Loader (rgthree)" and isinstance(wv, list):
+            n = 0
+            for item in wv:
+                if isinstance(item, dict) and "lora" in item and "strength" in item:
+                    n += 1
+                    inputs[f"lora_{n}"] = {k: item[k] for k in ("on", "lora", "strength", "strengthTwo") if k in item}
         # entradas enlazadas que object_info no declara (nodos dinámicos)
         for name, e in entries.items():
             if name in names or e.get("link") is None:

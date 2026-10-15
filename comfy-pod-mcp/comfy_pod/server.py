@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 
 from . import __version__, config
@@ -21,6 +22,10 @@ from .downloads import MANAGER
 from .manifest import Entry, load_manifest
 from .params import ParamError, apply_params, editable_inputs
 from . import workflows as wfm
+
+
+class ToolFail(ToolError, ValueError):
+    """Error esperado: el SDK solo pasa al cliente el texto de un ToolError (el resto queda en el log)."""
 
 IMG_EXTS = (".png", ".jpg", ".jpeg", ".webp", ".gif")
 B64_MAX = 2 * 1024 * 1024
@@ -130,7 +135,7 @@ async def download_models(name: str | None = None, files: list[str] | None = Non
     name: faltantes de ese workflow con URL resuelta. files: basenames, destinos 'models/...' o 'URL DESTINO'
     (se buscan en el manifiesto). pack: todos los archivos del PACK (sin distinguir mayúsculas)."""
     if not (name or files or pack):
-        raise ValueError("indica name, files o pack")
+        raise ToolFail("indica name, files o pack")
     manifest = await asyncio.to_thread(load_manifest)
     chosen: dict[str, Entry] = {}
     unresolved: list[str] = []
@@ -175,7 +180,7 @@ async def download_status(job_id: str) -> dict:
     """Estado por archivo: bytes, total, state (queued/downloading/done/skipped/error), error."""
     s = MANAGER.status(job_id)
     if s is None:
-        raise ValueError(f"job_id desconocido: {job_id}")
+        raise ToolFail(f"job_id desconocido: {job_id}")
     return s
 
 
@@ -192,11 +197,11 @@ async def run_workflow(name: str, params: dict | None = None) -> dict:
         api = {k: {**v, "inputs": dict(v.get("inputs", {}))} for k, v in api.items()}  # copia
         applied = await apply_params(api, params or {}, client)
     except (ConversionError, ParamError, ValueError) as e:
-        raise ValueError(str(e)) from e
+        raise ToolFail(str(e)) from e
     try:
         res = await client.post_prompt(api, uuid.uuid4().hex)
     except ComfyError as e:
-        raise ValueError(f"{e}: {e.detail}") from e
+        raise ToolFail(f"{e}: {e.detail}") from e
     return {"prompt_id": res.get("prompt_id"), "number": res.get("number"),
             "node_errors": res.get("node_errors") or {}, "applied": applied, "warnings": warns}
 

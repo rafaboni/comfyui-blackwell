@@ -77,7 +77,8 @@ RUN git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager.git && \
     git clone --depth 1 https://github.com/theUpsider/ComfyUI-Logic.git && \
     git clone --depth 1 https://github.com/Comfy-Org/Nvidia_RTX_Nodes_ComfyUI.git && \
     git clone --depth 1 https://github.com/Fannovel16/ComfyUI-Frame-Interpolation.git && \
-    git clone --depth 1 https://github.com/evanspearman/ComfyMath.git
+    git clone --depth 1 https://github.com/evanspearman/ComfyMath.git && \
+    git clone --depth 1 https://github.com/ClownsharkBatwing/RES4LYF.git
 # --- Dependencias de custom nodes ---
 # Bajo PIP_CONSTRAINT (torch congelado). Los fallos quedan en /comfyuiworkspace/node_deps_failed.txt.
 # Reintento sin aislamiento de build: sam2 (Impact-Pack) choca con el constraint de torch dentro del entorno aislado.
