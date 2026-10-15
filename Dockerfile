@@ -64,7 +64,7 @@ RUN git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager.git && \
     git clone --depth 1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git && \
     git clone --depth 1 https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git && \
     git clone --depth 1 https://github.com/jags111/efficiency-nodes-comfyui.git && \
-    git clone --depth 1 https://github.com/rgthree/rgthree-comfy.git && \
+    git clone --depth 1 --branch main https://github.com/rgthree/rgthree-comfy.git && \
     git clone --depth 1 https://github.com/1038lab/ComfyUI-QwenVL.git && \
     git clone --depth 1 https://github.com/huchukato/ComfyUI-QwenVL-Mod.git && \
     git clone --depth 1 https://github.com/MadiatorLabs/ComfyUI-RunpodDirect.git && \
@@ -92,7 +92,7 @@ RUN for dir in /comfyuiworkspace/ComfyUI/custom_nodes/*/; do \
     python -c "import torch; print('torch', torch.__version__, 'cuda', torch.version.cuda)"; \
     cat /comfyuiworkspace/node_deps_failed.txt 2>/dev/null || echo "deps de nodes: sin fallos"
 
-# --- rgthree: su parche de ejecucion recursiva rompe con ComfyUI 0.40 (execution.recursive_output_delete_if_changed ya no existe) ---
+# --- rgthree: la rama por defecto (dev) esta congelada en 2023; se clona main (arriba). El parche recursivo se apaga por si acaso. ---
 RUN printf '{\n  "patch_recursive_execution": false\n}\n' > /comfyuiworkspace/ComfyUI/custom_nodes/rgthree-comfy/rgthree_config.json
 
 # --- MCP comfy-pod (:8190, lo arranca start.sh si hay MCP_TOKEN) ---
