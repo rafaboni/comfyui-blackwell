@@ -4,12 +4,14 @@ from __future__ import annotations
 import argparse
 import asyncio
 import base64
+import functools
 import os
 import sys
 import uuid
 from pathlib import Path
 from urllib.parse import urlencode
 
+import httpx
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
@@ -27,6 +29,7 @@ from . import workflows as wfm
 class ToolFail(ToolError, ValueError):
     """Error esperado: el SDK solo pasa al cliente el texto de un ToolError (el resto queda en el log)."""
 
+
 IMG_EXTS = (".png", ".jpg", ".jpeg", ".webp", ".gif")
 B64_MAX = 2 * 1024 * 1024
 
@@ -37,12 +40,39 @@ mcp = MCPServer(
 )
 
 
+def _error_text(exc: Exception) -> str:
+    """Texto que verá el cliente; ComfyError trae además el detalle de la respuesta."""
+    detail = getattr(exc, "detail", None)
+    return f"{exc}: {detail}" if detail is not None else str(exc)
+
+
+def tool(**kwargs):
+    """Registra una tool y traduce los errores conocidos a ToolFail.
+
+    El SDK solo entrega al cliente el texto de un ToolError: cualquier otra excepción
+    llega como `Error executing tool X` sin mensaje.
+    """
+    def deco(fn):
+        @functools.wraps(fn)
+        async def wrapper(*args, **kw):
+            try:
+                return await fn(*args, **kw)
+            except ToolFail:
+                raise
+            except ComfyError as e:
+                raise ToolFail(_error_text(e)) from e
+            except (ValueError, OSError, httpx.HTTPError, ConversionError) as e:
+                raise ToolFail(str(e)) from e
+        return mcp.tool(**kwargs)(wrapper)
+    return deco
+
+
 def _client() -> ComfyClient:
     return ComfyClient()
 
 
 # ---------------------------------------------------------------- health
-@mcp.tool()
+@tool()
 async def health() -> dict:
     """Estado de ComfyUI (alcanzable, versión) y GPU/VRAM."""
     try:
@@ -62,7 +92,7 @@ async def health() -> dict:
 
 
 # ---------------------------------------------------------------- workflows
-@mcp.tool()
+@tool()
 async def list_workflows() -> list[dict]:
     """Workflows guardados por la UI (nombre, tamaño en bytes, mtime epoch), más recientes primero."""
     return await asyncio.to_thread(wfm.list_workflows)
@@ -100,7 +130,7 @@ async def _api_for(wf: dict) -> tuple[dict, list[str]]:
     return await asyncio.to_thread(convert_ui_to_api, wf, oi)
 
 
-@mcp.tool()
+@tool()
 async def describe_workflow(name: str) -> dict:
     """Entradas editables (prompts, seeds, imagen, steps, cfg, width/height, frames) por nodo
     (id+título+clase) y modelos referenciados (presente/faltante + URL/destino resueltos)."""
@@ -117,7 +147,7 @@ async def describe_workflow(name: str) -> dict:
     return out
 
 
-@mcp.tool()
+@tool()
 async def missing_models(name: str) -> dict:
     """Solo los modelos que faltan, con URL/destino del manifiesto o 'sin URL en el manifiesto'."""
     wf = await asyncio.to_thread(wfm.load_workflow, name)
@@ -128,7 +158,7 @@ async def missing_models(name: str) -> dict:
 
 
 # ---------------------------------------------------------------- descargas
-@mcp.tool()
+@tool()
 async def download_models(name: str | None = None, files: list[str] | None = None,
                           pack: str | None = None) -> dict:
     """Inicia descargas en segundo plano (máx. 3 a la vez) y devuelve job_id.
@@ -175,7 +205,7 @@ async def download_models(name: str | None = None, files: list[str] | None = Non
             "files": [{"dest": e.dest} for e in chosen.values()]}
 
 
-@mcp.tool()
+@tool()
 async def download_status(job_id: str) -> dict:
     """Estado por archivo: bytes, total, state (queued/downloading/done/skipped/error), error."""
     s = MANAGER.status(job_id)
@@ -185,7 +215,7 @@ async def download_status(job_id: str) -> dict:
 
 
 # ---------------------------------------------------------------- ejecución
-@mcp.tool()
+@tool()
 async def run_workflow(name: str, params: dict | None = None) -> dict:
     """Convierte (UI->API si hace falta), aplica params y encola en ComfyUI. Devuelve prompt_id.
     params: {"<node_id>.<input>": valor} y atajos "prompt", "negative", "seed" (-1 = aleatoria), "image"
@@ -194,7 +224,6 @@ async def run_workflow(name: str, params: dict | None = None) -> dict:
     client = _client()
     try:
         api, warns = await _api_for(wf)
-        api = {k: {**v, "inputs": dict(v.get("inputs", {}))} for k, v in api.items()}  # copia
         applied = await apply_params(api, params or {}, client)
     except (ConversionError, ParamError, ValueError) as e:
         raise ToolFail(str(e)) from e
@@ -206,7 +235,7 @@ async def run_workflow(name: str, params: dict | None = None) -> dict:
             "node_errors": res.get("node_errors") or {}, "applied": applied, "warnings": warns}
 
 
-@mcp.tool()
+@tool()
 async def get_job(prompt_id: str) -> dict:
     """Estado del trabajo: historial (success/error + errores de nodos) o posición en cola."""
     c = _client()
@@ -240,7 +269,7 @@ def _local_path(type_: str, sub: str, fn: str) -> Path | None:
     return p if base in p.parents and p.is_file() else None
 
 
-@mcp.tool()
+@tool()
 async def get_outputs(prompt_id: str, include_base64: bool = False) -> dict:
     """Archivos de salida (filename, subfolder, type, size) y URL relativa `/view?...` del proxy de ComfyUI
     (https://<podid>-8188.proxy.runpod.net + url). Con include_base64, imágenes < 2 MB en base64."""

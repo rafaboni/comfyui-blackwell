@@ -27,15 +27,19 @@ class DownloadError(Exception):
 
 
 def host_allowed(host: str) -> bool:
+    """Hosts de descarga permitidos: huggingface.co, civitai.com y github.com (este último exacto)."""
     h = (host or "").lower().rstrip(".")
-    return h in ("huggingface.co", "civitai.com") or h.endswith((".huggingface.co", ".civitai.com"))
+    return h in ("huggingface.co", "civitai.com", "github.com") or h.endswith((".huggingface.co", ".civitai.com"))
 
 
 def redirect_host_allowed(host: str) -> bool:
     """Hosts permitidos SOLO como destino de redirect. Observados el 2026-10-15:
-    HF -> us.aws.cdn.hf.co ; Civitai -> civitai-delivery-worker-prod.<hash>.r2.cloudflarestorage.com"""
+    HF -> us.aws.cdn.hf.co ; Civitai -> civitai-delivery-worker-prod.<hash>.r2.cloudflarestorage.com
+    El 2026-10-31: GitHub -> release-assets.githubusercontent.com (curl -I al release de
+    ComfyUI-Frame-Interpolation)."""
     h = (host or "").lower().rstrip(".")
     return (host_allowed(h) or h == "hf.co" or h.endswith(".hf.co")
+            or h == "release-assets.githubusercontent.com"
             or (h.startswith("civitai-delivery-worker") and h.endswith(".r2.cloudflarestorage.com")))
 
 
@@ -151,6 +155,7 @@ def _download(entry: Entry, rec: dict, hf_token: str | None, civ_token: str | No
     if host.endswith("civitai.com") and civ_token:
         sep = "&" if "?" in first_url else "?"
         first_url = f"{first_url}{sep}token={civ_token}"
+    # a github.com no se le manda ningún token (ni Authorization ni ?token=)
     offset = part.stat().st_size if part.exists() else 0
     rec.update(state="downloading", bytes=offset, error=None)
     with httpx.Client(timeout=httpx.Timeout(30.0, read=120.0), follow_redirects=False, transport=TRANSPORT) as c:
@@ -219,13 +224,14 @@ class DownloadManager:
         self._pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="dl")
         self._jobs: dict[str, dict] = {}
         self._lock = threading.Lock()
+        self._active: set[str] = set()  # destinos en descarga ahora mismo
 
     def start(self, entries: list[Entry]) -> str:
         job_id = uuid.uuid4().hex[:12]
         files = []
         for e in entries:
             rec = {"dest": e.dest, "url": e.url.split("?")[0], "state": "queued", "bytes": 0,
-                   "total": None, "error": None}
+                   "total": None, "error": None, "note": None}
             # validar antes de encolar: el error queda visible en el estado
             try:
                 validate_url(e.url)
@@ -235,6 +241,14 @@ class DownloadManager:
             files.append((e, rec))
         with self._lock:
             self._jobs[job_id] = {"created": time.time(), "files": [r for _, r in files]}
+            for e, rec in files:
+                if rec["state"] != "queued":
+                    continue
+                # dos jobs con el mismo destino corromperían el .part: solo uno baja
+                if e.dest in self._active:
+                    rec.update(state="skipped", note="ya se está bajando en otro job")
+                    continue
+                self._active.add(e.dest)
         for e, rec in files:
             if rec["state"] == "queued":
                 self._pool.submit(self._run, e, rec)
@@ -245,6 +259,9 @@ class DownloadManager:
             download_one(e, rec, get_token("HF_TOKEN"), get_token("CIVITAI_TOKEN"))
         except Exception as ex:  # noqa: BLE001  (nunca dejar un hilo sin estado final)
             rec.update(state="error", error=f"{type(ex).__name__}")
+        finally:
+            with self._lock:
+                self._active.discard(e.dest)
 
     def status(self, job_id: str) -> dict | None:
         with self._lock:

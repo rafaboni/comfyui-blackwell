@@ -1,7 +1,7 @@
 # ComfyUI Blackwell — RunPod Template
 
 [![RunPod](https://img.shields.io/badge/RunPod-Template-7c3aed?style=for-the-badge&logo=runpod)](https://runpod.io)
-[![ComfyUI](https://img.shields.io/badge/ComfyUI-Latest-000000?style=for-the-badge&logo=github)](https://github.com/comfyanonymous/ComfyUI)
+[![ComfyUI](https://img.shields.io/badge/ComfyUI-v0.43.0-000000?style=for-the-badge&logo=github)](https://github.com/comfyanonymous/ComfyUI)
 [![RTX 5090](https://img.shields.io/badge/GPU-RTX_5090_Blackwell-76b900?style=for-the-badge&logo=nvidia)](https://www.nvidia.com)
 
 Imagen Docker optimizada para **RTX 5090 (Blackwell sm_120)** con ComfyUI, gestión de configuración vía Cloudflare R2 y herramientas de administración integradas.
@@ -13,8 +13,8 @@ Imagen Docker optimizada para **RTX 5090 (Blackwell sm_120)** con ComfyUI, gesti
 | Puerto | Servicio | Descripción |
 |--------|----------|-------------|
 | **8188** | ComfyUI | Interfaz principal de generación de imágenes y video |
-| **8888** | Jupyter Lab | Terminal y explorador de archivos avanzado |
-| **8080** | File Browser | Explorador de archivos visual para subir/bajar archivos |
+| **8888** | Jupyter Lab | Terminal y explorador de archivos avanzado — pide token (`MCP_TOKEN`) |
+| **8080** | File Browser | Explorador de archivos visual — sin clave, solo local (127.0.0.1); los archivos se manejan por Jupyter |
 
 ---
 
@@ -27,6 +27,7 @@ Configurar como **RunPod Secrets** (no como variables normales):
 | `R2_ACCESS_KEY` | Clave de acceso de Cloudflare R2 |
 | `R2_SECRET_KEY` | Clave secreta de Cloudflare R2 |
 | `R2_ENDPOINT` | URL del bucket R2 (ej: `https://xxx.r2.cloudflarestorage.com`) |
+| `MCP_TOKEN` | Token de acceso para Jupyter Lab (`:8888`) y para las rutas `/rb_tools/*` del panel RB Tools. Si no se define, Jupyter arranca con token aleatorio y las rutas `/rb_tools/*` quedan cerradas |
 
 ---
 
@@ -97,6 +98,8 @@ El contenedor sincroniza automáticamente en background desde R2:
           ## 🧰 RB Tools (Panel de Administración)
 
           Panel integrado en el sidebar de ComfyUI. Accede desde el ícono 🔧 en la barra lateral.
+
+          Las rutas `/rb_tools/*` exigen el token `MCP_TOKEN` (header `X-RB-Token`): el panel lo pide una vez y lo guarda en el navegador. Sin `MCP_TOKEN` definido, esas rutas responden 401.
 
           ### 💾 SALVAR TODO
 
@@ -198,8 +201,8 @@ El contenedor sincroniza automáticamente en background desde R2:
                                         │
                                         ├── 🌐 Servicios
                                         │   ├── ComfyUI        :8188
-                                        │   ├── Jupyter Lab    :8888
-                                        │   └── File Browser   :8080
+                                        │   ├── Jupyter Lab    :8888  (pide token)
+                                        │   └── File Browser   :8080  (solo local, sin clave)
                                         │
                                         ├── 📁 /workspace/ComfyUI/
                                         │   ├── models/

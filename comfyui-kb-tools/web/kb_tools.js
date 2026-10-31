@@ -1,5 +1,28 @@
 import { app } from "../../scripts/app.js";
 
+const RB_TOKEN_KEY = "rb_token";
+
+function rbGetToken() {
+  let token = localStorage.getItem(RB_TOKEN_KEY);
+  if (!token) {
+    const asked = window.prompt("Token de RB Tools (MCP_TOKEN):");
+    token = (asked || "").trim();
+    if (token) localStorage.setItem(RB_TOKEN_KEY, token);
+  }
+  return token || "";
+}
+
+async function rbFetch(url, opts = {}) {
+  const headers = new Headers(opts.headers || {});
+  headers.set("X-RB-Token", rbGetToken());
+  const res = await fetch(url, { ...opts, headers });
+  if (res.status === 401) {
+    localStorage.removeItem(RB_TOKEN_KEY);
+    alert("Token de RB Tools inválido o ausente: se borró el token guardado. Ingrésalo de nuevo.");
+  }
+  return res;
+}
+
 const STYLES = `
 #rb-tools-panel {
   padding: 12px;
@@ -165,7 +188,7 @@ async function pollJob(jobId, outputEl, statusEl, buttons, successMsg) {
   while (true) {
     await new Promise(r => setTimeout(r, 800));
     try {
-      const res = await fetch(`/rb_tools/output/${jobId}`);
+      const res = await rbFetch(`/rb_tools/output/${jobId}`);
       const data = await res.json();
       const newLines = data.lines.slice(lastLine);
       if (newLines.length > 0) {
@@ -229,7 +252,7 @@ async function pollDownloadJob(jobId, progressContainer, statusEl, buttons, succ
   while (true) {
     await new Promise(r => setTimeout(r, 600));
     try {
-      const res = await fetch(`/rb_tools/output/${jobId}`);
+      const res = await rbFetch(`/rb_tools/output/${jobId}`);
       const data = await res.json();
       const newLines = data.lines.slice(lastLine);
       lastLine = data.lines.length;
@@ -301,7 +324,7 @@ async function pollDownloadJob(jobId, progressContainer, statusEl, buttons, succ
 
 async function startJob(url, body, outputEl, statusEl, buttons, successMsg) {
   try {
-    const res = await fetch(url, {
+    const res = await rbFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body || {})
@@ -365,7 +388,7 @@ function buildPanel() {
 
   // Cargar lista desde R2
   let packData = [];
-  fetch("/rb_tools/models_list")
+  rbFetch("/rb_tools/models_list")
     .then(r => r.json())
     .then(data => {
       modelList.innerHTML = "";
@@ -422,7 +445,7 @@ function buildPanel() {
     cancelBtn.disabled = true;
     cancelBtn.textContent = "⏳ Cancelando...";
     try {
-      const res = await fetch("/rb_tools/cancel_download", { method: "POST" });
+      const res = await rbFetch("/rb_tools/cancel_download", { method: "POST" });
       const data = await res.json();
       dlStatus.className = "kb-status err";
       dlStatus.textContent = `🛑 Cancelado — ${data.cleaned || 0} archivos eliminados.`;
@@ -453,7 +476,7 @@ function buildPanel() {
     }
     const packs = checked.map(cb => cb.dataset.packName);
     // Iniciar job
-    fetch("/rb_tools/download_models", {
+    rbFetch("/rb_tools/download_models", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ packs })
@@ -603,7 +626,7 @@ function buildPanel() {
     editorStatus.textContent = "⏳ Guardando...";
 
     try {
-      const res = await fetch("/rb_tools/models_txt");
+      const res = await rbFetch("/rb_tools/models_txt");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
@@ -613,7 +636,7 @@ function buildPanel() {
       }
       const newContent = (data.content || "").trimEnd() + newPack;
 
-      const saveRes = await fetch("/rb_tools/save_models_txt", {
+      const saveRes = await rbFetch("/rb_tools/save_models_txt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: newContent })
@@ -630,7 +653,7 @@ function buildPanel() {
 
       // Recargar lista
       modelList.innerHTML = "<div class='kb-model-empty'>Recargando...</div>";
-      fetch("/rb_tools/models_list").then(r => r.json()).then(d => {
+      rbFetch("/rb_tools/models_list").then(r => r.json()).then(d => {
         modelList.innerHTML = "";
         (d.packs || []).forEach(pack => {
           const item = document.createElement("label");

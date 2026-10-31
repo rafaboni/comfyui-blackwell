@@ -46,7 +46,7 @@ ENV PIP_CONSTRAINT=/tmp/constraints.txt
 
 # --- ComfyUI (version fijada: H3 pide >=0.30, los workflows 10sorlabs usan nodos core de 0.35) ---
 ARG CACHE_DATE
-ARG COMFYUI_REF=v0.40.0
+ARG COMFYUI_REF=v0.43.0
 WORKDIR /comfyuiworkspace
 RUN git clone --depth 1 --branch ${COMFYUI_REF} https://github.com/Comfy-Org/ComfyUI.git && \
     test -f ComfyUI/main.py || (echo "FATAL: ComfyUI/main.py not found!" && exit 1)

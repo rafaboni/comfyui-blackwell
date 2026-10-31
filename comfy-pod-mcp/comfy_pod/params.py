@@ -68,6 +68,16 @@ def _sort_key(nid: str):
     return [int(p) if p.isdigit() else 0 for p in re.split(r"[:]", nid)]
 
 
+def _role_from_name(name: str) -> str | None:
+    """Papel que se deduce del nombre de la entrada: negative_prompt, positive_prompt, ..."""
+    n = (name or "").lower()
+    if n.startswith("negative"):
+        return "negative"
+    if n.startswith("positive"):
+        return "positive"
+    return None
+
+
 def editable_inputs(api: dict) -> list[dict]:
     roles = _roles(api)
     out = []
@@ -90,8 +100,11 @@ def editable_inputs(api: dict) -> list[dict]:
             item = {"node_id": nid, "title": title, "class_type": cls, "input": name,
                     "key": f"{nid}.{name}", "kind": kind,
                     "value": v if not isinstance(v, str) else v[:MAX_TEXT]}
-            if kind == "prompt" and nid in roles:
-                item["role"] = roles[nid]
+            if kind == "prompt":
+                # el nombre de la entrada manda; el título del nodo solo es el respaldo
+                role = _role_from_name(name) or roles.get(nid)
+                if role:
+                    item["role"] = role
             out.append(item)
     return out
 
@@ -164,7 +177,6 @@ async def apply_params(api: dict, params: dict, client, transport=None) -> list[
     applied: list[str] = []
     params = dict(params or {})
     edit = editable_inputs(api)
-    roles = {e["node_id"]: e.get("role") for e in edit if e["kind"] == "prompt"}
 
     def set_in(nid: str, name: str, value) -> None:
         api[nid]["inputs"][name] = value

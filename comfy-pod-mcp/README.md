@@ -48,10 +48,19 @@ Prueba local sin HTTP: `python3 -m comfy_pod --stdio`.
 
 ## Añadir en Claude Code (Mac)
 
+El MCP local `comfy-pod` (puente stdio, `../.claude/skills/comfy-pod/scripts/comfy_pods_mcp.py`)
+es fijo: **no se registra uno por pod**. El puente descubre solo cuál pod de ComfyUI está
+corriendo (`list_pods`, `pod_call`) y llama por dentro al MCP que vive dentro del pod.
+
 ```bash
-claude mcp add --transport http comfy-pod https://<podid>-8190.proxy.runpod.net/mcp \
-  --header "Authorization: Bearer <token>"
+claude mcp remove comfy-pod -s local 2>/dev/null
+claude mcp add comfy-pod -s local -- ~/.local/venvs/comfy-pod-local/bin/python \
+  ../.claude/skills/comfy-pod/scripts/comfy_pods_mcp.py
 ```
+
+Con varios pods corriendo hay que decir cuál: `pod_call(tool, arguments, pod="<id o nombre>")`.
+
+Atajo sin cliente MCP: `../.claude/skills/comfy-pod/scripts/mcpcall.sh <pod|auto> <tool> '<json>'`.
 
 Las URLs de `get_outputs` son relativas: se abren en `https://<podid>-8188.proxy.runpod.net` + `url`.
 
@@ -65,12 +74,15 @@ del repo `comfy-cuda`). El modelo se asocia por *basename*; si no está en el ma
 
 ## Seguridad de las descargas
 
-Solo `https`; hosts `huggingface.co`, `*.huggingface.co`, `civitai.com`, `*.civitai.com`. Los redirects se
-validan salto a salto y además admiten `*.hf.co` y `civitai-delivery-worker*.r2.cloudflarestorage.com`
-(observados con `curl -I` el 2026-10-15). En redirects se descartan el `Authorization` y el token. El destino
-se resuelve (incluidos symlinks) y debe quedar dentro de `$COMFY_DIR/models`. Se escribe a `.part`, se reanuda
-con `Range`, se verifica el tamaño contra `Content-Length`/`Content-Range` y se renombra al final. No pisa
-archivos existentes. Civitai usa `?token=` (único mecanismo implementado), HF usa `Bearer`.
+Solo `https`; hosts `huggingface.co`, `*.huggingface.co`, `civitai.com`, `*.civitai.com` y
+`github.com` (este último, exacto). Los redirects se validan salto a salto y además admiten
+`*.hf.co`, `civitai-delivery-worker*.r2.cloudflarestorage.com` y `release-assets.githubusercontent.com`
+(observados con `curl -I` el 2026-10-15 y el 2026-10-31). En redirects se descartan el `Authorization`
+y el token. A `github.com` no se le manda ningún token. El destino se resuelve (incluidos symlinks) y
+debe quedar dentro de `$COMFY_DIR/models`. Se escribe a `.part`, se reanuda con `Range`, se verifica
+el tamaño contra `Content-Length`/`Content-Range` y se renombra al final. No pisa archivos existentes.
+Civitai usa `?token=` (único mecanismo implementado), HF usa `Bearer`. Dos jobs con el mismo destino:
+el segundo se salta (`skipped`), para no corromper el `.part`.
 
 ## Conversión UI → API
 
@@ -93,7 +105,6 @@ ComfyUI y las descargas se simulan con `httpx.MockTransport`; los tests no usan 
 
 ## Limitaciones conocidas
 
-- Nunca probado contra un ComfyUI real ni en el pod (solo mocks + servidor HTTP local sin ComfyUI).
 - Conversión: nodos dinámicos/autogrow y *promoted widgets* de subgrafos (valores de widget en la instancia)
   no se convierten; nodos con widgets_values desalineados respecto a `object_info` darán valores corridos;
   un nodo cuya clase no esté en `/object_info` falla con el id y la clase. Un nodo de salida muteado desaparece.

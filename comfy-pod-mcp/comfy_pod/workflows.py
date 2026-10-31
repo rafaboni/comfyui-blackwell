@@ -34,8 +34,6 @@ LOADER_FOLDERS: dict[str, str | None] = {
     "SAMLoader": "sams",
 }
 
-_safe_cache: dict[str, Any] = {}
-
 
 def resolve_workflow_path(name: str) -> Path:
     """Resuelve `name` dentro de la carpeta de workflows; rechaza escapes."""
@@ -90,15 +88,18 @@ def iter_ui_nodes(wf: dict) -> Iterator[tuple[str, dict]]:
             yield f"{sg.get('name') or sg.get('id')}/{n.get('id')}", n
 
 
-def _strings(v: Any) -> Iterator[str]:
+def _widget_strings(v: Any) -> Iterator[str]:
+    """Textos de un widget; se ignoran las filas dict con `on` False (LoRA apagado de Power Lora Loader)."""
     if isinstance(v, str):
         yield v
     elif isinstance(v, list):
         for x in v:
-            yield from _strings(x)
+            yield from _widget_strings(x)
     elif isinstance(v, dict):
+        if v.get("on") is False:
+            return
         for x in v.values():
-            yield from _strings(x)
+            yield from _widget_strings(x)
 
 
 def looks_like_model(s: str) -> bool:
@@ -141,7 +142,7 @@ def referenced_models(wf: dict) -> list[dict]:
         if node.get("mode") == 2:  # muteado: no se ejecuta, no se exige
             continue
         wv = node.get("widgets_values")
-        for s in _strings(wv):
+        for s in _widget_strings(wv):
             if looks_like_model(s):
                 add(s, cls, ref)
         for m in (node.get("properties") or {}).get("models", []) or []:
