@@ -73,11 +73,24 @@ def _spec_parts(spec: Any) -> tuple[Any, dict]:
     return t, o
 
 
+def _is_widget_type(type_: Any) -> bool:
+    """True si el frontend crea un widget para ese tipo.
+
+    El frontend acepta tipos compuestos ("FLOAT,INT"): si uno de los tipos es de widget,
+    la entrada consume su lugar en `widgets_values` como cualquier otro widget.
+    """
+    if isinstance(type_, list):
+        return True
+    if not isinstance(type_, str):
+        return False
+    return any(p.strip() in WIDGET_TYPES for p in type_.split(","))
+
+
 def _is_widget(spec: Any) -> bool:
     t, o = _spec_parts(spec)
     if o.get("forceInput"):
         return False
-    return isinstance(t, list) or t in WIDGET_TYPES
+    return _is_widget_type(t)
 
 
 def _ordered_inputs(info: dict) -> list[tuple[str, Any]]:
@@ -177,7 +190,34 @@ class Converter:
             return None
         name = sg_in[slot].get("name")
         entry = next((e for e in inst.get("inputs", []) if e.get("name") == name), None)
-        return self._follow_input(pscope, inst, entry, depth)
+        if entry is not None and entry.get("link") is not None:
+            return self._follow_input(pscope, inst, entry, depth)
+        # sin enlace la entrada es un widget de la instancia: su valor está en widgets_values
+        valores = self._instance_widget_values(inst)
+        return Val(valores[name]) if name in valores else None
+
+    def _instance_widget_values(self, inst: dict) -> dict[str, Any]:
+        """Widget de una instancia de subgrafo -> valor.
+
+        El frontend crea un widget por cada entrada del subgrafo de tipo widget, en el orden
+        en que el subgrafo las declara, y las serializa en `widgets_values` en ese mismo orden
+        (aunque la entrada esté enlazada o no aparezca en `inputs` de la instancia).
+        """
+        sg = self.sgs.get(inst.get("type")) or {}
+        wv = inst.get("widgets_values")
+        if not isinstance(wv, list):
+            return {}
+        out: dict[str, Any] = {}
+        pos = 0
+        for entry in sg.get("inputs") or []:
+            name = entry.get("name")
+            if not name or not _is_widget_type(entry.get("type")):
+                continue
+            if pos >= len(wv):
+                break
+            out[name] = wv[pos]
+            pos += 1
+        return out
 
     def _subgraph_output(self, scope: Scope, inst: dict, slot: int, depth: int):
         inner = self._inner_scope(scope, inst)

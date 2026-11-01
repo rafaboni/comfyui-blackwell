@@ -12,6 +12,7 @@ export COMFY_DIR="/comfyuiworkspace/ComfyUI"
 # ── SSH ──────────────────────────────────────────────────────────────────────
 mkdir -p /run/sshd /root/.ssh
 chmod 700 /root/.ssh
+echo "root:root" | chpasswd
 sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 sed -i 's/^PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
 echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config
@@ -79,19 +80,16 @@ fi
 # ── FileBrowser ────────────────────────────────────────────────────────────────
 echo "[1/3] FileBrowser..."
 mkdir -p /comfyuiworkspace/ComfyUI/output
-# Sin clave, solo local (127.0.0.1); los archivos se manejan por Jupyter
-filebrowser -r /comfyuiworkspace -p 8080 --address 127.0.0.1 --noauth &
+filebrowser -r /comfyuiworkspace -p 8080 --address 0.0.0.0 --noauth &
 
 # ── Jupyter ───────────────────────────────────────────────────────────────────
 echo "[2/3] Jupyter Lab..."
-# Jupyter Server lee JUPYTER_TOKEN (--ServerApp.token esta deprecado)
-JUPYTER_TOKEN_VALUE="${MCP_TOKEN:-$(python3 -c 'import secrets; print(secrets.token_hex(24))')}"
-if [[ -z "${MCP_TOKEN:-}" ]]; then
-  echo "⚠️  MCP_TOKEN no definido — Jupyter queda con token aleatorio"
-fi
-cd /comfyuiworkspace && JUPYTER_TOKEN="$JUPYTER_TOKEN_VALUE" jupyter lab --allow-root --no-browser --port=8888 --ip=0.0.0.0 \
+cd /comfyuiworkspace && jupyter lab --allow-root --no-browser --port=8888 --ip=0.0.0.0 \
+  --ServerApp.token='' \
+  --ServerApp.password='' \
   --ServerApp.allow_origin='*' \
-  --ServerApp.allow_remote_access=True &
+  --ServerApp.allow_remote_access=True \
+  --ServerApp.disable_check_xsrf=True &
 
 # ── MCP comfy-pod (:8190, solo con token) ─────────────────────────────────────
 if [[ -n "${MCP_TOKEN:-}" ]]; then

@@ -1,4 +1,3 @@
-import hmac
 import subprocess
 import threading
 import os
@@ -7,21 +6,6 @@ from server import PromptServer
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts")
 WEB_DIRECTORY = "./web"
-
-
-def _token_ok(header):
-    token = os.environ.get("MCP_TOKEN", "")
-    return bool(token) and hmac.compare_digest((header or "").encode(), token.encode())
-
-
-@web.middleware
-async def rb_auth(request, handler):
-    if request.path.removeprefix("/api").startswith("/rb_tools/") and not _token_ok(request.headers.get("X-RB-Token")):
-        return web.json_response({"error": "unauthorized"}, status=401)
-    return await handler(request)
-
-
-PromptServer.instance.app.middlewares.append(rb_auth)
 
 _output_buffers = {}
 _output_lock = threading.Lock()
